@@ -166,6 +166,7 @@ const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d
 const dstr = x => String(x || '').slice(0, 10);
 const digits = s => String(s || '').replace(/\D/g, '');
 const phoneOf = x => String(x).replace(/^'/, '');
+const isUrl = u => /^https?:\/\//.test(u || '');
 const waNum = s => { let d = digits(s); if (d.startsWith('0')) d = '856' + d.slice(1); return d; };
 const memLS = {}; // ສຳຮອງເມື່ອ browser ບໍ່ອະນຸຍາດ localStorage
 function loadJSON(k, def) { try { return JSON.parse(localStorage.getItem(k)) || def; } catch { return memLS[k] || def; } }
@@ -201,7 +202,7 @@ function mock(action, d) {
   const stockAdj = (items, sign) => { items.forEach(i => { const p = products.find(x => x.id === i.id); if (p && p.stock < 9999) p.stock = Math.max(0, p.stock + sign * i.qty); }); s('products', products); };
   const custs = g('custs', []);
   const accOk = (phone, token) => !!token && custs.some(c => c.phone === digits(phone) && c.token === token);
-  const pub = o => { const { housePhoto, slip, mapLink, note, ...rest } = o; return rest; };
+  const pub = o => { const { housePhoto, slip, note, ...rest } = o; return rest; };
   switch (action) {
     case 'register': {
       const ph = digits(d.phone);
@@ -545,7 +546,7 @@ async function submitOrder() {
     saveJSON('cust', { name, phone, address, mapLink: order.mapLink }); saveJSON('lastOrder', items); saveJSON('lastTrack', { orderId: r.orderId, phone });
     if (acct) api('saveProfile', { phone: acct.phone, token: acct.token, name, address, mapLink: order.mapLink }).then(x => { if (x.ok) saveJSON('acct', { ...acct, name, address, mapLink: order.mapLink }); });
     $('reorder').classList.remove('hide');
-    const inv = { orderId: r.orderId, time: new Date().toISOString(), status: (order.payMethod === 'qr' && !order.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', name, phone, address, itemsJson: JSON.stringify(lines), subtotal: snap.sub, bottleDeposit: snap.bt, total: r.total, payNow: r.payNow, payMethod: order.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value };
+    const inv = { mapLink: order.mapLink, orderId: r.orderId, time: new Date().toISOString(), status: (order.payMethod === 'qr' && !order.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', name, phone, address, itemsJson: JSON.stringify(lines), subtotal: snap.sub, bottleDeposit: snap.bt, total: r.total, payNow: r.payNow, payMethod: order.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value };
     window._lastInv = inv;
     cart = {}; saveCart();
     $('payBody').innerHTML = `<div style="text-align:center;padding:20px 0"><div style="font-size:54px">✅</div>
@@ -570,7 +571,7 @@ function invoiceHtml(o) {
   return `<div class="inv"><div style="text-align:center"><b style="font-size:18px">${esc(S.shopName || '')}</b><div class="muted">${esc(S.contact || '')} ${esc(S.phone || '')}</div></div>
     <h3 style="margin:10px 0 4px">ໃບບິນ / ໃບສັ່ງຊື້ ${esc(o.orderId)}</h3>
     <div class="muted">${esc(String(o.time).replace('T', ' ').slice(0, 16))} · ${esc(o.status || '')}</div>
-    <div style="margin-top:6px"><b>${esc(o.name)}</b>${o.phone ? ' · ' + esc(phoneOf(o.phone)) : ''}<br>${esc(o.address || '')}</div>
+    <div style="margin-top:6px"><b>${esc(o.name)}</b>${o.phone ? ' · ' + esc(phoneOf(o.phone)) : ''}<br>${esc(o.address || '')}${isUrl(o.mapLink) ? ` <a class="link link-primary noprint" target="_blank" rel="noopener" href="${esc(o.mapLink)}">📍 ເບິ່ງແຜນທີ່</a>` : ''}</div>
     <div>🚚 ${esc(dstr(o.deliveryDate))} ${esc(o.deliverySlot || '')}</div>
     <table><tr><th>ລາຍການ</th><th class="r">ຈຳນວນ</th><th class="r">ລາຄາ</th><th class="r">ລວມ</th></tr>
     ${items.map(i => `<tr><td>${esc(i.name)}${i.opt ? ` <span class="muted">(${esc(i.opt)})</span>` : ''}</td><td class="r">${i.qty}</td><td class="r">${money(i.price)}</td><td class="r">${money(i.price * i.qty)}</td></tr>`).join('')}</table>
@@ -587,6 +588,7 @@ function invoiceText(o) {
   L.push(`🧾 ໃບບິນ ${S.shopName || ''}`, `ເລກອໍເດີ: ${o.orderId}`, `ວັນທີ: ${String(o.time).replace('T', ' ').slice(0, 16)}${o.status ? ' · ' + o.status : ''}`);
   L.push(`ຊື່: ${o.name}${o.phone ? ' · ' + phoneOf(o.phone) : ''}`);
   if (o.address) L.push(`ທີ່ຢູ່: ${o.address}`);
+  if (isUrl(o.mapLink)) L.push(`📍 ແຜນທີ່: ${o.mapLink}`);
   L.push(`🚚 ຈັດສົ່ງ: ${dstr(o.deliveryDate)} ${o.deliverySlot || ''}`.trim(), '', 'ລາຍການ:');
   items.forEach(i => L.push(`• ${i.name}${i.opt ? ' (' + i.opt + ')' : ''} × ${i.qty} = ${money(i.price * i.qty)}`));
   L.push('', `ລວມສິນຄ້າ: ${money(o.subtotal)}`);
