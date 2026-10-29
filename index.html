@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ຮ້ານຄ້າອອນລາຍ</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--c:#1bbccf;--bg:#f5f7f8;--card:#fff;--tx:#1d2a2e;--mu:#6b7b80;--bd:#e1e7ea}
 *{box-sizing:border-box}
@@ -62,6 +63,40 @@ input:focus,select:focus,textarea:focus{outline:0;border-color:var(--c)}
 #invPrint{display:none}.inv table{width:100%;border-collapse:collapse;margin:8px 0}.inv td,.inv th{padding:4px 2px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}.inv .r{text-align:right}
 @media print{header,.tabs,.noprint,#demo,.toast,.modal{display:none!important}body{background:#fff}.ar{break-inside:avoid;border:1px solid #888}
 body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!important}}
+/* ===== ຕົວໜັງສື: ອ່ານສະບາຍຕາ (Noto Sans Lao Looped + ຂະໜາດ 16px + ໄລຍະບັນທັດກວ້າງສຳລັບສະຫຼະ/ວັນນະຍຸດລາວ) ===== */
+:root{--f:'Noto Sans Lao Looped','Noto Sans Lao','Leelawadi UI','Segoe UI',system-ui,sans-serif;--tx:#1f2f35;--mu:#566a70;--bd:#dde5e8;--bg:#f4f7f8}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--f);font-size:16px;line-height:1.75;letter-spacing:0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word}
+button,input,select,textarea{font-family:var(--f);font-size:1rem;line-height:1.5}
+h1,h2,h3{line-height:1.5;font-weight:700}
+header h1{font-size:1.1rem}header small{font-size:.8rem;line-height:1.5}
+.sheet h2{font-size:1.2rem}
+.card{border-radius:16px}
+.card .bd{gap:8px;padding:12px}
+.card .nm{font-size:1rem;line-height:1.5;font-weight:600}
+.price{font-size:1.1rem;font-variant-numeric:tabular-nums}
+.muted{font-size:.875rem;line-height:1.65}
+label{font-size:.875rem;font-weight:500;margin:14px 0 6px}
+input,select,textarea{padding:12px 14px;border-radius:12px}
+.btn{font-weight:600;line-height:1.5;padding:11px 16px;border-radius:12px;min-height:44px}
+.btn.sm{font-size:.875rem;padding:8px 12px;min-height:38px}
+.tabs button{font-size:.875rem}
+.chip{font-size:.9rem;padding:6px 14px}
+.line{line-height:1.6}.tot{font-size:1.1rem}
+.badge{font-size:.8rem;padding:2px 10px}
+.steps div{font-size:.75rem}
+.toast{font-size:.9rem}
+.ar,.card,.filt{box-shadow:0 1px 2px rgba(20,40,50,.05)}
+@media(max-width:560px){
+header{flex-wrap:wrap;gap:6px 10px;padding:10px 14px}
+header .logo{height:38px}
+header h1{order:3;flex:1 1 100%;font-size:1.05rem;line-height:1.4}
+header small{display:inline;margin-left:8px;font-size:.8rem}
+header .btn:first-of-type{margin-left:auto}
+header .btn{min-height:40px;padding:8px 12px}
+.lbl{display:none}
+.wrap{padding:14px}
+}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -76,7 +111,7 @@ body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!
     <h1 id="shopName">...<small id="tagline"></small></h1>
     <button class="btn cartbtn" onclick="openAccount()" title="ບັນຊີຂອງຂ້ອຍ" style="padding:10px">👤</button>
     <button class="btn cartbtn" onclick="openTrack()" title="ກວດສະຖານະອໍເດີ" style="padding:10px">🔎</button>
-    <button class="btn cartbtn" onclick="openCart()">🛒 ກະຕ່າ<b id="cnt">0</b></button>
+    <button class="btn cartbtn" onclick="openCart()">🛒<span class="lbl"> ກະຕ່າ</span><b id="cnt">0</b></button>
   </header>
   <div class="wrap">
     <div id="ownerBar" class="hide" style="background:#fff4d6;border-radius:12px;padding:10px;margin-bottom:12px">
