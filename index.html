@@ -613,7 +613,7 @@ async function submitOrder() {
       <p>ເລກອໍເດີ <b>${esc(r.orderId)}</b><br><span class="muted">ບິນຖືກເກັບໄວ້ໃນໂທລະສັບແລ້ວ (ກົດ 🧾 ເທິງສຸດເພື່ອເບິ່ງຄືນ)</span></p>
       <p>ຍອດລວມ ${money(r.total)}${r.payNow ? `<br>ຈ່າຍແລ້ວ/ແຈ້ງໂອນ ${money(r.payNow)}` : '<br>ຈ່າຍເງິນປາຍທາງ'}</p>
       ${inv.status === 'ລໍຖ້າຊຳລະ' ? '<p class="muted">⏳ ລໍຖ້າການຊຳລະ — ກະລຸນາສົ່ງສະລິບໃຫ້ຮ້ານ</p>' : ''}
-      <p class="muted">ທາງຮ້ານຈະຕິດຕໍ່ຢືນຢັນໃຫ້ໄວໆນີ້</p>
+      <p class="muted">ລໍຖ້າຮ້ານຢືນຢັນຮັບອໍເດີ — ເມື່ອຮ້ານຢືນຢັນ ສະຖານະຈະປ່ຽນເປັນ "ຮ້ານຮັບແລ້ວ" ໃນ 🧾 ບິນ & ອໍເດີຂອງຂ້ອຍ</p>
       <button class="btn btn-primary btn-block" style="margin-bottom:8px" onclick="window._inv = window._lastInv; saveInvoiceImage()">💾 ບັນທຶກບິນເປັນຮູບ</button>
       <button class="btn btn-outline btn-primary btn-block" style="margin-bottom:8px" onclick="showInvoice(window._lastInv)">🧾 ເບິ່ງໃບບິນ</button>
       <button class="btn btn-primary btn-block" onclick="closeM('mPay')">ປິດ</button></div>`;
@@ -623,6 +623,8 @@ async function submitOrder() {
 /* ---------- ກວດສະຖານະອໍເດີ (ລູກຄ້າ) ---------- */
 const STATUS = ['ລໍຖ້າຊຳລະ', 'ໃໝ່', 'ຢືນຢັນແລ້ວ', 'ກຳລັງຈັດສົ່ງ', 'ສຳເລັດ', 'ຍົກເລີກ'];
 const STEPS = ['ໃໝ່', 'ຢືນຢັນແລ້ວ', 'ກຳລັງຈັດສົ່ງ', 'ສຳເລັດ'];
+const STEP_LABEL = { 'ໃໝ່': 'ສົ່ງອໍເດີແລ້ວ', 'ຢືນຢັນແລ້ວ': 'ຮ້ານຮັບແລ້ວ', 'ກຳລັງຈັດສົ່ງ': 'ກຳລັງຈັດສົ່ງ', 'ສຳເລັດ': 'ສຳເລັດ' };
+const STATUS_MSG = { 'ລໍຖ້າຊຳລະ': '⏳ ລໍຖ້າການຊຳລະ — ກະລຸນາໂອນ ແລະສົ່ງສະລິບໃຫ້ຮ້ານ', 'ໃໝ່': 'ສົ່ງອໍເດີແລ້ວ — ລໍຖ້າຮ້ານຢືນຢັນຮັບອໍເດີ', 'ຢືນຢັນແລ້ວ': '✅ ຮ້ານໄດ້ຮັບອໍເດີຂອງທ່ານແລ້ວ ກຳລັງກຽມເຄື່ອງ', 'ກຳລັງຈັດສົ່ງ': '🚚 ກຳລັງຈັດສົ່ງໄປຫາທ່ານ', 'ສຳເລັດ': '✅ ຈັດສົ່ງສຳເລັດແລ້ວ ຂອບໃຈທີ່ອຸດໜູນ', 'ຍົກເລີກ': 'ອໍເດີນີ້ຖືກຍົກເລີກ' };
 const sCls = s => ({ 'ລໍຖ້າຊຳລະ': 'badge-warning', 'ໃໝ່': 'badge-info', 'ຢືນຢັນແລ້ວ': 'badge-info', 'ກຳລັງຈັດສົ່ງ': 'badge-secondary', 'ສຳເລັດ': 'badge-success', 'ຍົກເລີກ': 'badge-error' }[s] || 'badge-ghost');
 
 /* ---------- ໃບບິນ / ໃບສັ່ງຊື້ (ເບິ່ງ ແລະພິມ) ---------- */
@@ -799,6 +801,7 @@ function renderBills() {
   const box = $('billList'); if (!box) return;
   const l = loadJSON(BILLS_KEY, []);
   box.innerHTML = l.length ? l.map((b, i) => `<div class="ar"><div class="line"><b>${esc(b.orderId)}</b><span class="badge ${sCls(b.status)}">${esc(b.status)}</span></div>
+    <div class="text-sm font-medium">${STATUS_MSG[b.status] || ''}</div>
     <div class="muted">${esc(String(b.time).replace('T', ' ').slice(0, 16))} · ${esc(b.inv.itemsText || parseItems(b.inv).map(x => x.name + ' x' + x.qty).join(', '))}</div>
     <div class="line"><span>ລວມ</span><b>${money(b.total)}</b></div>
     <div class="row"><button class="btn btn-primary btn-sm" onclick="openBill(${i})">🧾 ເບິ່ງບິນ / ບັນທຶກຮູບ</button><button class="btn btn-ghost btn-sm fix" onclick="delBill(${i})">ລຶບ</button></div></div>`).join('')
@@ -826,7 +829,8 @@ async function doTrack() {
   const o = r.order, idx = STEPS.indexOf(o.status), cancelled = o.status === 'ຍົກເລີກ';
   window._trk = { ...o, phone }; rememberBill(window._trk, phone); renderBills();
   $('tRes').innerHTML = `<div class="ar" style="margin-top:12px"><div class="line"><b>${esc(o.orderId)}</b><span class="badge ${sCls(o.status)}">${esc(o.status)}</span></div>
-    ${cancelled ? '' : o.status === 'ລໍຖ້າຊຳລະ' ? '<div class="muted" style="margin:6px 0">⏳ ລໍຖ້າການຊຳລະ — ກະລຸນາໂອນ ແລະສົ່ງສະລິບໃຫ້ຮ້ານ</div>' : `<ul class="steps w-full my-3 text-xs">${STEPS.map((s, i) => `<li class="step ${i <= idx ? 'step-primary' : ''}">${s}</li>`).join('')}</ul>`}
+    <div class="font-medium my-2">${STATUS_MSG[o.status] || ''}</div>
+    ${cancelled || o.status === 'ລໍຖ້າຊຳລະ' ? '' : `<ul class="steps w-full my-3 text-xs">${STEPS.map((s, i) => `<li class="step ${i <= idx ? 'step-primary' : ''}">${STEP_LABEL[s] || s}</li>`).join('')}</ul>`}
     <div class="muted">${esc(o.itemsText)}</div>
     <div class="line"><span>ຍອດລວມ</span><b>${money(o.total)}</b></div>
     <div class="line"><span>ຈ່າຍແລ້ວ</span><span>${money(o.payNow)}</span></div>
@@ -932,10 +936,33 @@ function fillOrders() {
   const list = A.orders.filter(o => (!OF.st || o.status === OF.st) && (!q || (o.name + ' ' + phoneOf(o.phone) + ' ' + o.orderId).toLowerCase().includes(q)));
   $('oList').innerHTML = (list.length ? list.slice(0, 100).map(orderCard).join('') : '<p class="muted">ບໍ່ມີອໍເດີ</p>') + (list.length > 100 ? `<p class="muted">ສະແດງ 100 ຈາກ ${list.length} — ໃຊ້ຊ່ອງຄົ້ນຫາ</p>` : '');
 }
+/* ປຸ່ມຂັ້ນຕອນດ່ວນໃນບັດອໍເດີ: ຢືນຢັນຮັບອໍເດີ → ເລີ່ມຈັດສົ່ງ → ສົ່ງແລ້ວ (ກົດເທື່ອດຽວ ບັນທຶກທັນທີ ແລະລູກຄ້າເຫັນໃນ 🧾) */
+const NEXT_STEP = { 'ລໍຖ້າຊຳລະ': ['ຢືນຢັນແລ້ວ', '✔ ຢືນຢັນຮັບອໍເດີ'], 'ໃໝ່': ['ຢືນຢັນແລ້ວ', '✔ ຢືນຢັນຮັບອໍເດີ'], 'ຢືນຢັນແລ້ວ': ['ກຳລັງຈັດສົ່ງ', '🚚 ເລີ່ມຈັດສົ່ງ'], 'ກຳລັງຈັດສົ່ງ': ['ສຳເລັດ', '✔ ສົ່ງແລ້ວ (ສຳເລັດ)'] };
+function customerMsg(o) { // ຂໍ້ຄວາມແຈ້ງລູກຄ້າທາງ WhatsApp ຕາມສະຖານະ
+  const head = `ສະບາຍດີ ${o.name} 🙏\n`, items = parseItems(o).map(i => `• ${i.name}${i.opt ? ' (' + i.opt + ')' : ''} × ${i.qty}`).join('\n');
+  const when = `🚚 ຈັດສົ່ງ: ${dstr(o.deliveryDate)} ${o.deliverySlot || ''}`.trim(), foot = `\nຂອບໃຈທີ່ອຸດໜູນ ${S.shopName || ''}`;
+  if (o.status === 'ກຳລັງຈັດສົ່ງ') return `${head}ອໍເດີ ${o.orderId} ກຳລັງຈັດສົ່ງໄປຫາທ່ານ 🚚\n${items}\nຍອດລວມ: ${money(o.total)}${foot}`;
+  if (o.status === 'ສຳເລັດ') return `${head}ອໍເດີ ${o.orderId} ຈັດສົ່ງສຳເລັດແລ້ວ ✅${foot}`;
+  return `${head}ຮ້ານ ${S.shopName || ''} ໄດ້ຮັບອໍເດີ ${o.orderId} ຂອງທ່ານແລ້ວ ✅\n${items}\nຍອດລວມ: ${money(o.total)}\n${when}${foot}`;
+}
+function orderActions(x) {
+  const nx = NEXT_STEP[x.status], id = x.orderId;
+  const notify = ['ຢືນຢັນແລ້ວ', 'ກຳລັງຈັດສົ່ງ', 'ສຳເລັດ'].includes(x.status) && x.phone
+    ? `<a class="btn btn-success btn-sm text-white fix" target="_blank" rel="noopener" href="https://wa.me/${waNum(x.phone)}?text=${encodeURIComponent(customerMsg(x))}">💬 ແຈ້ງລູກຄ້າ</a>` : '';
+  if (!nx && !notify) return '';
+  return `<div class="row mb-1 noprint">${nx ? `<button class="btn ${x.status === 'ໃໝ່' || x.status === 'ລໍຖ້າຊຳລະ' ? 'btn-success text-white' : 'btn-primary'}" onclick="quickStatus('${id}','${nx[0]}')">${nx[1]}</button>` : ''}${notify}</div>`;
+}
+async function quickStatus(id, st) {
+  const sel = $('o_status_' + id); if (sel) sel.value = st;
+  await saveOrder(id);
+  const x = A.orders.find(o => o.orderId === id), card = $('oc_' + id);
+  if (x && x.status === st && card) { card.outerHTML = orderCard(x); toast(st === 'ຢືນຢັນແລ້ວ' ? 'ຢືນຢັນຮັບອໍເດີແລ້ວ ✓ — ລູກຄ້າຈະເຫັນໃນ ບິນ & ອໍເດີຂອງຂ້ອຍ' : 'ອັບເດດສະຖານະແລ້ວ ✓'); }
+}
 function orderCard(x) {
   const id = x.orderId;
-  return `<div class="ar">
+  return `<div class="ar" id="oc_${id}">
       <div class="line"><b>${esc(id)}</b><span class="muted">${esc(String(x.time).replace('T', ' ').slice(0, 16))}</span></div>
+      ${orderActions(x)}
       <div class="row"><div><label>ຊື່</label><input class="input input-bordered w-full" id="o_name_${id}" value="${esc(x.name)}"></div><div><label>ເບີໂທ</label><input class="input input-bordered w-full" id="o_phone_${id}" value="${esc(phoneOf(x.phone))}"></div></div>
       <label>ທີ່ຢູ່</label><textarea class="textarea textarea-bordered w-full" id="o_address_${id}" rows="2">${esc(x.address)}</textarea>
       <div class="muted" style="margin:6px 0">${esc(x.itemsText)}</div>
