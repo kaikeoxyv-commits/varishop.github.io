@@ -30,7 +30,7 @@ html[data-theme=light]{--p:73% 0.12 205;--pc:22% 0.04 215;--b1:100% 0 0;--b2:97%
 .btn .ic:not(:only-child){margin-inline-end:0}
 #mapBox{height:320px;border-radius:.75rem;margin:.5rem 0}
 #invPrint{display:none}
-@media print{header,.tabs,.noprint,#demo,#toast,.modal{display:none!important}body{background:#fff}.ar{break-inside:avoid;border:1px solid #888}
+@media print{header,#tabs,.noprint,#demo,#toast,.modal{display:none!important}body{background:#fff}.ar{break-inside:avoid;border:1px solid #888}
 body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!important}}
 </style>
 <style type="text/tailwindcss">
@@ -120,15 +120,16 @@ body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!
     <a href="#" id="backShop" class="btn btn-primary btn-sm noprint" onclick="goView(false);return false">← ໜ້າຮ້ານ</a>
     <button class="btn btn-ghost btn-sm noprint" id="logoutBtn" onclick="adminLogout()">ອອກ</button>
   </header>
-  <div class="max-w-5xl mx-auto p-3 sm:p-4">
+  <div class="max-w-6xl mx-auto p-3 sm:p-4">
     <div id="login" class="card bg-base-100 border border-base-300 shadow-sm p-4 max-w-sm mx-auto mt-6">
       <label class="mt-0">ລະຫັດຜ່ານ (ເຈົ້າຂອງຮ້ານ ຫຼື ພະນັກງານ)</label>
       <input type="password" id="pw" class="input input-bordered w-full" onkeydown="if(event.key==='Enter')login()">
       <button class="btn btn-primary btn-block mt-3" onclick="login()">ເຂົ້າສູ່ລະບົບ</button>
       <div class="err" id="loginErr"></div>
     </div>
-    <div id="panel" class="hide">
-      <div class="tabs tabs-boxed bg-base-100 flex-wrap gap-1 mb-3 p-1" id="tabs"></div>
+    <div id="panel" class="hide md:flex md:gap-4 md:items-start">
+      <div id="tabs" class="noprint flex md:flex-col gap-1 overflow-x-auto md:overflow-visible bg-base-100 border border-base-300 rounded-2xl p-2 mb-3 md:mb-0 md:w-52 md:shrink-0 md:sticky md:top-20 shadow-sm"></div>
+      <div class="flex-1 min-w-0 w-full">
       <div id="t-orders" class="hide"></div>
       <div id="t-delivery" class="hide"></div>
       <div id="t-repeat" class="hide"></div>
@@ -136,6 +137,7 @@ body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!
       <div id="t-report" class="hide"></div>
       <div id="t-products" class="hide"></div>
       <div id="t-settings" class="hide"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -910,12 +912,12 @@ async function loadAdmin() {
   $('adminTitle').textContent = ROLE === 'owner' ? '⚙️ ຈັດການຮ້ານ' : '👷 ພະນັກງານ';
   const allowed = TABS.filter(t => t[2] || ROLE === 'owner');
   if (!allowed.some(t => t[0] === curTab)) curTab = 'orders';
-  $('tabs').innerHTML = allowed.map(t => `<button class="tab flex-1 whitespace-nowrap h-auto py-2 px-3 text-sm" data-t="${t[0]}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('');
+  $('tabs').innerHTML = allowed.map(t => `<button class="btn btn-ghost justify-start gap-2 flex-none md:w-full whitespace-nowrap" data-t="${t[0]}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('');
   tab(curTab);
 }
 function tab(t) {
   curTab = t;
-  document.querySelectorAll('#tabs button').forEach(b => b.className = 'tab flex-1 whitespace-nowrap h-auto py-2 px-3 text-sm' + (b.dataset.t === t ? ' tab-active' : ''));
+  document.querySelectorAll('#tabs button').forEach(b => b.className = 'btn justify-start gap-2 flex-none md:w-full whitespace-nowrap ' + (b.dataset.t === t ? 'btn-primary' : 'btn-ghost'));
   TABS.forEach(x => $('t-' + x[0]).classList.toggle('hide', x[0] !== t));
   ({ orders: renderOrders, delivery: renderDelivery, repeat: renderRepeat, customers: renderCustomers, report: renderReport, products: renderProducts, settings: renderSettings })[t]();
 }
