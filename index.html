@@ -81,7 +81,7 @@ body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!
     <h1 id="shopName" class="!block order-last basis-full sm:order-none sm:basis-auto sm:flex-1 min-w-0 text-base font-bold leading-snug brand">...<small id="tagline" class="ml-2 sm:ml-0 sm:block text-xs font-normal text-base-content/70"></small></h1>
     <div class="flex gap-2 ml-auto sm:ml-0">
       <button class="btn btn-primary btn-sm h-10" onclick="openAccount()" title="ບັນຊີຂອງຂ້ອຍ">👤</button>
-      <button class="btn btn-primary btn-sm h-10" onclick="openTrack()" title="ກວດສະຖານະອໍເດີ">🔎</button>
+      <button class="btn btn-primary btn-sm h-10" onclick="openTrack()" title="ບິນ & ອໍເດີຂອງຂ້ອຍ">🧾</button>
       <button class="btn btn-primary btn-sm h-10" onclick="openCart()">🛒<span class="hidden sm:inline">ກະຕ່າ</span><span class="badge badge-error badge-sm text-white" id="cnt">0</span></button>
     </div>
   </header>
@@ -369,7 +369,7 @@ function applyTheme() {
   $('contact').innerHTML = `<div class="muted">${esc(S.contact || '')}</div><div class="row" style="justify-content:center;margin-top:8px;flex-wrap:wrap">
     ${tel ? `<a class="btn btn-outline btn-primary btn-sm fix" href="tel:${tel}">📞 ໂທ ${esc(S.phone)}</a>` : ''}
     ${wa ? `<a class="btn btn-outline btn-primary btn-sm fix" target="_blank" rel="noopener" href="https://wa.me/${wa}">💬 WhatsApp</a>` : ''}
-    <button class="btn btn-outline btn-primary btn-sm fix" onclick="openTrack()">🔎 ກວດສະຖານະອໍເດີ</button></div>`;
+    <button class="btn btn-outline btn-primary btn-sm fix" onclick="openTrack()">🧾 ບິນ & ອໍເດີຂອງຂ້ອຍ</button></div>`;
 }
 let taps = 0, tapTimer;
 function logoTap() { if (MODE !== "both") return; taps++; clearTimeout(tapTimer); tapTimer = setTimeout(() => taps = 0, 3000); if (taps >= 5) { taps = 0; goView(true); } }
@@ -606,15 +606,16 @@ async function submitOrder() {
     if (acct) api('saveProfile', { phone: acct.phone, token: acct.token, name, address, mapLink: order.mapLink }).then(x => { if (x.ok) saveJSON('acct', { ...acct, name, address, mapLink: order.mapLink }); });
     $('reorder').classList.remove('hide');
     const inv = { mapLink: order.mapLink, orderId: r.orderId, time: new Date().toISOString(), status: (order.payMethod === 'qr' && !order.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', name, phone, address, itemsJson: JSON.stringify(lines), subtotal: snap.sub, bottleDeposit: snap.bt, total: r.total, payNow: r.payNow, payMethod: order.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value };
-    window._lastInv = inv;
+    window._lastInv = inv; rememberBill(inv, phone);
     cart = {}; saveCart();
     $('payBody').innerHTML = `<div style="text-align:center;padding:20px 0"><div style="font-size:54px">✅</div>
       <h2 style="justify-content:center">ສັ່ງຊື້ສຳເລັດ</h2>
-      <p>ເລກອໍເດີ <b>${esc(r.orderId)}</b><br><span class="muted">ເກັບເລກນີ້ໄວ້ເພື່ອກວດສະຖານະ (ກົດ 🔎)</span></p>
+      <p>ເລກອໍເດີ <b>${esc(r.orderId)}</b><br><span class="muted">ບິນຖືກເກັບໄວ້ໃນໂທລະສັບແລ້ວ (ກົດ 🧾 ເທິງສຸດເພື່ອເບິ່ງຄືນ)</span></p>
       <p>ຍອດລວມ ${money(r.total)}${r.payNow ? `<br>ຈ່າຍແລ້ວ/ແຈ້ງໂອນ ${money(r.payNow)}` : '<br>ຈ່າຍເງິນປາຍທາງ'}</p>
       ${inv.status === 'ລໍຖ້າຊຳລະ' ? '<p class="muted">⏳ ລໍຖ້າການຊຳລະ — ກະລຸນາສົ່ງສະລິບໃຫ້ຮ້ານ</p>' : ''}
       <p class="muted">ທາງຮ້ານຈະຕິດຕໍ່ຢືນຢັນໃຫ້ໄວໆນີ້</p>
-      <button class="btn btn-outline btn-primary btn-block" style="margin-bottom:8px" onclick="showInvoice(window._lastInv)">🧾 ເບິ່ງ / ພິມໃບບິນ</button>
+      <button class="btn btn-primary btn-block" style="margin-bottom:8px" onclick="window._inv = window._lastInv; saveInvoiceImage()">💾 ບັນທຶກບິນເປັນຮູບ</button>
+      <button class="btn btn-outline btn-primary btn-block" style="margin-bottom:8px" onclick="showInvoice(window._lastInv)">🧾 ເບິ່ງໃບບິນ</button>
       <button class="btn btn-primary btn-block" onclick="closeM('mPay')">ປິດ</button></div>`;
   } catch (e) { err('ຜິດພາດ: ' + e.message); b.disabled = false; b.textContent = 'ຢືນຢັນສັ່ງຊື້'; }
 }
@@ -669,38 +670,169 @@ function showInvoice(o) {
   // ແອດມິນ: ສົ່ງຫາລູກຄ້າ; ລູກຄ້າ: ສົ່ງຫາຮ້ານ (ຖ້າຕັ້ງເບີ WhatsApp ໄວ້)
   const to = inAdmin ? waNum(o.phone) : waNum(S.whatsapp || S.phone);
   $('invBody').innerHTML = `<h2>🧾 ໃບບິນ<button class="btn btn-ghost btn-sm btn-circle text-xl" onclick="closeM('mInv')">×</button></h2>${invoiceHtml(o)}
-    <div class="grid grid-cols-2 gap-2 mt-3">
+    <button class="btn btn-primary btn-block mt-3" onclick="saveInvoiceImage()">💾 ບັນທຶກບິນເປັນຮູບ (ໄວ້ໃນໂທລະສັບ)</button>
+    <div class="grid grid-cols-2 gap-2 mt-2">
       <button class="btn btn-outline btn-primary" onclick="copyInvoice()">📋 ຄັດລອກຂໍ້ຄວາມ</button>
       <a class="btn btn-success text-white" target="_blank" rel="noopener" href="https://wa.me/${to}?text=${enc}">💬 ${inAdmin ? 'ສົ່ງ WhatsApp ຫາລູກຄ້າ' : (to ? 'ສົ່ງ WhatsApp ຫາຮ້ານ' : 'ສົ່ງ WhatsApp')}</a>
     </div>
     <a class="btn btn-ghost bg-base-200 btn-block mt-2" target="_blank" rel="noopener" href="https://wa.me/?text=${enc}">↗ ແຊຣ໌ໄປ WhatsApp (ເລືອກຜູ້ຮັບເອງ)</a>
-    <button class="btn btn-primary btn-block mt-2" onclick="printInvoice()">🖨 ພິມ / ບັນທຶກເປັນ PDF</button>`;
+    <button class="btn btn-ghost bg-base-200 btn-block mt-2" onclick="printInvoice()">🖨 ພິມ / ບັນທຶກເປັນ PDF</button>`;
   openM('mInv');
 }
 function printInvoice() { $('invPrint').innerHTML = invoiceHtml(window._inv); document.body.classList.add('pi'); window.print(); setTimeout(() => document.body.classList.remove('pi'), 600); }
-function openTrack(res) {
-  const t = loadJSON('lastTrack', {});
-  $('trackBody').innerHTML = `<h2>🔎 ກວດສະຖານະອໍເດີ<button class="btn btn-ghost btn-sm btn-circle text-xl" onclick="closeM('mTrack')">×</button></h2>
-    <label>ເລກອໍເດີ</label><input class="input input-bordered w-full" id="tId" value="${esc(t.orderId || '')}" placeholder="ເຊັ່ນ OD241027-101530">
-    <label>ເບີໂທທີ່ໃຊ້ສັ່ງ</label><input class="input input-bordered w-full" id="tPhone" type="tel" value="${esc(t.phone || '')}">
-    <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="doTrack()">ກວດສອບ</button>
-    <div id="tRes"></div>`;
-  openM('mTrack');
+
+/* ---------- ບັນທຶກບິນເປັນຮູບ PNG (ແຕ້ມດ້ວຍ canvas ຈຶ່ງບໍ່ຕ້ອງໃຊ້ library ແລະສະແດງພາສາລາວຖືກຕ້ອງ) ---------- */
+async function invoiceCanvas(o) {
+  const FONT = '"Noto Sans Lao Looped","Noto Sans Lao","Leelawadi UI","Segoe UI",sans-serif';
+  try { await Promise.all([400, 600, 700].map(w => document.fonts.load(`${w} 16px "Noto Sans Lao Looped"`, 'ກຂຄ'))); await document.fonts.ready; } catch {}
+  const W = 760, P = 36, SC = 2, items = parseItems(o), bal = Math.max(0, o.total - o.payNow);
+  const brand = S.themeColor || '#1bbccf', ink = '#1f2f35', mute = '#5a6c72', rule = '#dde5e8';
+  const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  const logo = document.querySelector('img.logo'), hasLogo = !!(logo && logo.complete && logo.naturalWidth > 0);
+  const draw = (ctx, dry) => {
+    let y = 0;
+    const F = (w, px) => `${w} ${px}px ${FONT}`;
+    const wrap = (txt, maxW) => { // ຕັດບັນທັດຕາມຂະໜາດ ໂດຍບໍ່ຕັດກາງພະຍັນຊະນະ+ສະຫຼະ
+      const g = seg ? [...seg.segment(String(txt))].map(s => s.segment) : [...String(txt)], lines = []; let ln = '', sp = -1;
+      for (const ch of g) {
+        if (ch === '\n') { lines.push(ln); ln = ''; sp = -1; continue; }
+        const t = ln + ch;
+        if (ctx.measureText(t).width > maxW && ln) {
+          if (sp > 0) { lines.push(ln.slice(0, sp).trimEnd()); ln = ln.slice(sp).trimStart() + ch; } else { lines.push(ln); ln = ch; }
+          sp = ln.lastIndexOf(' ');
+        } else { ln = t; if (ch === ' ') sp = ln.length - 1; }
+      }
+      lines.push(ln); return lines;
+    };
+    const text = (t, x, size, w, color, align = 'left', maxW = W - 2 * P, lh = 1.65) => {
+      ctx.font = F(w, size); ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'top';
+      const ls = wrap(t, maxW); ls.forEach(l => { if (!dry) ctx.fillText(l, x, y); y += size * lh; }); return ls.length;
+    };
+    const pair = (a, b, size, w, color) => { // ປ້າຍຊ້າຍ + ຄ່າຂວາ ໃນແຖວດຽວ
+      ctx.font = F(w, size); ctx.fillStyle = color; if (!dry) { ctx.textAlign = 'left'; ctx.fillText(a, P, y); ctx.textAlign = 'right'; ctx.fillText(b, W - P, y); } y += size * 1.7;
+    };
+    const hr = () => { if (!dry) { ctx.fillStyle = rule; ctx.fillRect(P, y, W - 2 * P, 1.5); } y += 12; };
+    if (!dry) { ctx.fillStyle = brand; ctx.fillRect(0, 0, W, 10); }
+    y = 30;
+    let lw = 0; if (hasLogo) { const h = 54; lw = logo.naturalWidth / logo.naturalHeight * h; if (!dry) ctx.drawImage(logo, P, y, lw, h); }
+    const nx = P + (lw ? lw + 18 : 0), y0 = y;
+    y = y0 + 2; text(S.shopName || '', nx, 24, 700, ink, 'left', W - nx - P, 1.35);
+    text([S.contact, S.phone].filter(Boolean).join(' · '), nx, 14, 400, mute, 'left', W - nx - P, 1.5);
+    y = Math.max(y, y0 + 62) + 14; hr();
+    text('ໃບບິນ / ໃບສັ່ງຊື້', P, 20, 700, ink);
+    text(o.orderId, P, 20, 700, brand);
+    text(`${String(o.time).replace('T', ' ').slice(0, 16)}${o.status ? '  ·  ' + o.status : ''}`, P, 15, 400, mute);
+    y += 8;
+    text(`${o.name}${o.phone ? '  ·  ' + phoneOf(o.phone) : ''}`, P, 17, 600, ink);
+    if (o.address) text(o.address, P, 16, 400, ink);
+    if (isUrl(o.mapLink)) text('ແຜນທີ່: ' + o.mapLink, P, 13, 400, mute);
+    text(`ຈັດສົ່ງ: ${dstr(o.deliveryDate)} ${o.deliverySlot || ''}`.trim(), P, 16, 400, ink);
+    y += 8; hr();
+    const cQ = W - P - 300, cP = W - P - 150, cT = W - P, nameW = cQ - P - 70;
+    ctx.font = F(600, 14); ctx.fillStyle = mute; if (!dry) { ctx.textAlign = 'left'; ctx.fillText('ລາຍການ', P, y); ctx.textAlign = 'right'; ctx.fillText('ຈຳນວນ', cQ, y); ctx.fillText('ລາຄາ', cP, y); ctx.fillText('ລວມ', cT, y); } y += 26;
+    items.forEach(i => {
+      const top = y; ctx.font = F(400, 16); ctx.fillStyle = ink;
+      text(i.name + (i.opt ? ` (${i.opt})` : ''), P, 16, 400, ink, 'left', nameW, 1.6);
+      if (!dry) { ctx.font = F(400, 16); ctx.fillStyle = ink; ctx.textAlign = 'right'; ctx.fillText(String(i.qty), cQ, top); ctx.fillText(money(i.price), cP, top); ctx.fillText(money(i.price * i.qty), cT, top); }
+      y += 4;
+    });
+    hr();
+    pair('ລວມສິນຄ້າ', money(o.subtotal), 16, 400, ink);
+    if (Number(o.bottleDeposit)) pair('ມັດຈຳກະຕຸກ (ຄືນໄດ້)', money(o.bottleDeposit), 16, 400, ink);
+    y += 4; pair('ລວມທັງໝົດ', money(o.total), 21, 700, ink);
+    pair(`ຈ່າຍແລ້ວ (${o.payMethod || ''})`, money(o.payNow), 16, 400, ink);
+    pair('ຄ້າງຈ່າຍ', money(bal), 17, 700, bal > 0 ? '#d64545' : ink);
+    y += 10; hr(); y += 4;
+    text('ຂອບໃຈທີ່ອຸດໜູນ', W / 2, 16, 600, ink, 'center');
+    if (S.phone) text('ຕິດຕໍ່ຮ້ານ: ' + S.phone, W / 2, 14, 400, mute, 'center');
+    return y + 24;
+  };
+  const H = Math.ceil(draw(document.createElement('canvas').getContext('2d'), true));
+  const cv = document.createElement('canvas'); cv.width = W * SC; cv.height = H * SC;
+  const ctx = cv.getContext('2d'); ctx.scale(SC, SC); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); draw(ctx, false);
+  return cv;
 }
+async function saveInvoiceImage() {
+  const o = window._inv; openM('mInv');
+  $('invBody').innerHTML = '<p class="muted py-8 text-center">ກຳລັງສ້າງຮູບບິນ...</p>';
+  try {
+    const cv = await invoiceCanvas(o), blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    window._invBlob = blob;
+    $('invBody').innerHTML = `<h2>💾 ບັນທຶກບິນເປັນຮູບ<button class="btn btn-ghost btn-sm btn-circle text-xl" onclick="closeM('mInv')">×</button></h2>
+      <img src="${URL.createObjectURL(blob)}" alt="ໃບບິນ ${esc(o.orderId)}" class="w-full rounded-xl border border-base-300">
+      <p class="muted text-center mt-2">ກົດປຸ່ມລຸ່ມເພື່ອບັນທຶກລົງຮູບພາບ ຫຼືແຊຣ໌. ຖ້າບໍ່ໄດ້ ໃຫ້ <b>ກົດຄ້າງທີ່ຮູບ</b> ແລ້ວເລືອກ "ບັນທຶກຮູບ"</p>
+      <button class="btn btn-primary btn-block" onclick="shareInvoiceImage()">💾 ບັນທຶກ / ແຊຣ໌ຮູບ</button>
+      <button class="btn btn-ghost bg-base-200 btn-block mt-2" onclick="showInvoice(window._inv)">← ກັບໄປໃບບິນ</button>`;
+  } catch (e) { $('invBody').innerHTML = `<p class="err">ສ້າງຮູບບໍ່ໄດ້: ${esc(e.message)}</p><button class="btn btn-ghost bg-base-200 btn-block mt-2" onclick="showInvoice(window._inv)">← ກັບໄປໃບບິນ</button>`; }
+}
+async function shareInvoiceImage() {
+  const name = `bill-${window._inv.orderId}.png`, file = new File([window._invBlob], name, { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) { // ມືຖື: ເປີດແຜ່ນແຊຣ໌ (ບັນທຶກລົງຮູບ, WhatsApp, ...)
+    try { await navigator.share({ files: [file], title: 'ໃບບິນ ' + window._inv.orderId }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(window._invBlob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  toast('ບັນທຶກຮູບແລ້ວ ✓');
+}
+
+/* ---------- ບິນ & ອໍເດີຂອງຂ້ອຍ: ເກັບໄວ້ໃນໂທລະສັບ (localStorage) ແລະອັບເດດສະຖານະຈາກຮ້ານເອງ ---------- */
+const BILLS_KEY = 'myBills';
+function rememberBill(inv, phone) {
+  const l = loadJSON(BILLS_KEY, []).filter(b => b.orderId !== inv.orderId);
+  l.unshift({ orderId: inv.orderId, phone, time: inv.time, status: inv.status, total: inv.total, inv: { ...inv, phone } });
+  saveJSON(BILLS_KEY, l.slice(0, 30));
+}
+function openTrack() {
+  const t = loadJSON('lastTrack', {});
+  $('trackBody').innerHTML = `<h2>🧾 ບິນ & ອໍເດີຂອງຂ້ອຍ<button class="btn btn-ghost btn-sm btn-circle text-xl" onclick="closeM('mTrack')">×</button></h2>
+    <div class="muted">ອໍເດີທີ່ສັ່ງຈາກເຄື່ອງນີ້ ເກັບໄວ້ໃນໂທລະສັບ ແລະສະຖານະອັບເດດເອງ</div>
+    <div id="billList" class="mt-2"></div>
+    <details class="collapse collapse-arrow bg-base-200 rounded-xl mt-2"><summary class="collapse-title min-h-0 py-3 font-medium">ຄົ້ນຫາອໍເດີດ້ວຍເລກອໍເດີ (ສັ່ງຈາກເຄື່ອງອື່ນ)</summary>
+      <div class="collapse-content">
+        <label>ເລກອໍເດີ</label><input class="input input-bordered w-full" id="tId" value="${esc(t.orderId || '')}" placeholder="ເຊັ່ນ OD241027-101530">
+        <label>ເບີໂທທີ່ໃຊ້ສັ່ງ</label><input class="input input-bordered w-full" id="tPhone" type="tel" value="${esc(t.phone || '')}">
+        <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="doTrack()">ກວດສອບ</button>
+        <div id="tRes"></div>
+      </div></details>`;
+  openM('mTrack'); renderBills(); refreshBills();
+}
+function renderBills() {
+  const box = $('billList'); if (!box) return;
+  const l = loadJSON(BILLS_KEY, []);
+  box.innerHTML = l.length ? l.map((b, i) => `<div class="ar"><div class="line"><b>${esc(b.orderId)}</b><span class="badge ${sCls(b.status)}">${esc(b.status)}</span></div>
+    <div class="muted">${esc(String(b.time).replace('T', ' ').slice(0, 16))} · ${esc(b.inv.itemsText || parseItems(b.inv).map(x => x.name + ' x' + x.qty).join(', '))}</div>
+    <div class="line"><span>ລວມ</span><b>${money(b.total)}</b></div>
+    <div class="row"><button class="btn btn-primary btn-sm" onclick="openBill(${i})">🧾 ເບິ່ງບິນ / ບັນທຶກຮູບ</button><button class="btn btn-ghost btn-sm fix" onclick="delBill(${i})">ລຶບ</button></div></div>`).join('')
+    : '<p class="muted">ຍັງບໍ່ມີອໍເດີໃນເຄື່ອງນີ້ — ເມື່ອສັ່ງຊື້ ບິນຈະຖືກເກັບໄວ້ຢູ່ນີ້ອັດຕະໂນມັດ</p>';
+}
+let billsBusy = false;
+async function refreshBills() { // ຖາມສະຖານະຫຼ້າສຸດຈາກຮ້ານ ສະເພາະອໍເດີທີ່ຍັງບໍ່ສຳເລັດ/ບໍ່ຍົກເລີກ
+  if (billsBusy) return; billsBusy = true;
+  try {
+    const l = loadJSON(BILLS_KEY, []); let changed = false;
+    for (const b of l.slice(0, 6)) {
+      if (!b.phone || b.status === 'ສຳເລັດ' || b.status === 'ຍົກເລີກ') continue;
+      const r = await api('track', { orderId: b.orderId, phone: b.phone }); if (!r.ok) continue;
+      const o = r.order;
+      if (o.status !== b.status || o.payNow !== b.inv.payNow) { b.status = o.status; b.inv = { ...b.inv, ...o, phone: b.phone }; changed = true; }
+    }
+    if (changed) { saveJSON(BILLS_KEY, l); renderBills(); }
+  } finally { billsBusy = false; }
+}
+function openBill(i) { const b = loadJSON(BILLS_KEY, [])[i]; if (b) showInvoice(b.inv); }
+function delBill(i) { if (!confirm('ລຶບບິນນີ້ອອກຈາກລາຍການໃນເຄື່ອງນີ້? (ບໍ່ກະທົບອໍເດີຂອງຮ້ານ)')) return; const l = loadJSON(BILLS_KEY, []); l.splice(i, 1); saveJSON(BILLS_KEY, l); renderBills(); }
 async function doTrack() {
-  const r = await api('track', { orderId: $('tId').value, phone: $('tPhone').value });
+  const phone = $('tPhone').value, r = await api('track', { orderId: $('tId').value, phone });
   if (!r.ok) { $('tRes').innerHTML = `<div class="err">${esc(r.error)}</div>`; return; }
   const o = r.order, idx = STEPS.indexOf(o.status), cancelled = o.status === 'ຍົກເລີກ';
-  window._trk = o;
+  window._trk = { ...o, phone }; rememberBill(window._trk, phone); renderBills();
   $('tRes').innerHTML = `<div class="ar" style="margin-top:12px"><div class="line"><b>${esc(o.orderId)}</b><span class="badge ${sCls(o.status)}">${esc(o.status)}</span></div>
     ${cancelled ? '' : o.status === 'ລໍຖ້າຊຳລະ' ? '<div class="muted" style="margin:6px 0">⏳ ລໍຖ້າການຊຳລະ — ກະລຸນາໂອນ ແລະສົ່ງສະລິບໃຫ້ຮ້ານ</div>' : `<ul class="steps w-full my-3 text-xs">${STEPS.map((s, i) => `<li class="step ${i <= idx ? 'step-primary' : ''}">${s}</li>`).join('')}</ul>`}
     <div class="muted">${esc(o.itemsText)}</div>
     <div class="line"><span>ຍອດລວມ</span><b>${money(o.total)}</b></div>
     <div class="line"><span>ຈ່າຍແລ້ວ</span><span>${money(o.payNow)}</span></div>
     <div class="line"><span>🚚 ຈັດສົ່ງ</span><span>${esc(dstr(o.deliveryDate))} ${esc(o.deliverySlot || '')}</span></div>
-    <button class="btn btn-outline btn-primary btn-sm" style="margin-top:6px" onclick="showInvoice(window._trk)">🧾 ເບິ່ງ / ພິມໃບບິນ</button></div>`;
+    <button class="btn btn-outline btn-primary btn-sm" style="margin-top:6px" onclick="showInvoice(window._trk)">🧾 ເບິ່ງ / ບັນທຶກໃບບິນ</button></div>`;
 }
-
 /* ---------- ບັນຊີລູກຄ້າ (ເບີໂທ + PIN) ---------- */
 let ACC_ORDERS = [];
 function openAccount() { renderAccount(); openM('mAcc'); }
