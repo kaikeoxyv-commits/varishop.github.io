@@ -684,7 +684,10 @@ function squareIcon(size) {
   return c.toDataURL('image/png');
 }
 function setupPWA() {
-  if (MODE === 'admin' || pwaReady) return; pwaReady = true;
+  if (MODE === 'admin' || pwaReady) return;
+  const lg = document.querySelector('img.logo');
+  if (lg && !lg.complete) { lg.addEventListener('load', setupPWA, { once: true }); lg.addEventListener('error', setupPWA, { once: true }); return; }
+  pwaReady = true;
   try {
     const i192 = squareIcon(192), i512 = squareIcon(512), add = (rel, href) => { const l = document.createElement('link'); l.rel = rel; l.href = href; document.head.appendChild(l); };
     add('apple-touch-icon', i192); add('icon', i192);
@@ -701,8 +704,12 @@ const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.matchMedi
 function toggleShopSide(open) { $('shopSide').classList.toggle('-translate-x-full', !open); $('shopShade').classList.toggle('hide', !open); }
 function shopNav(fn) { toggleShopSide(false); fn(); }
 function goTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function applyLogo() {
+  if (!S.logo) return;
+  document.querySelectorAll('img.logo').forEach(i => { if (i.getAttribute('src') !== S.logo) { i.style.display = ''; i.src = S.logo; } });
+}
 function applyTheme() {
-  setTheme(S.themeColor);
+  setTheme(S.themeColor); applyLogo();
   $('shopName').firstChild.textContent = S.shopName || 'ຮ້ານຄ້າ';
   $('tagline').textContent = S.tagline || '';
   $('sideName').textContent = S.shopName || ''; $('sideTag').textContent = S.tagline || '';
@@ -1565,6 +1572,8 @@ function renderSettings() {
     <label>ສີຂອງລິ້ງ / ຮ້ານ</label>
     <div class="row"><input type="color" id="s_themeColor" value="${esc(s.themeColor)}" style="height:44px;padding:2px"><div class="sw">${COLORS.map(c => `<span style="background:${c}" onclick="$('s_themeColor').value='${c}'"></span>`).join('')}</div></div>
     <label>ສະກຸນເງິນ</label><input class="input input-bordered w-full" id="s_currency" value="${esc(s.currency)}">
+    <label>ໂລໂກ້ຮ້ານ (ອັບໂຫຼດຮູບໃໝ່ເພື່ອປ່ຽນ)</label><input class="file-input file-input-bordered w-full" type="file" accept="image/*" onchange="upLogo(this)">
+    <div class="flex items-center gap-3 mt-2"><img class="h-14 w-auto rounded bg-base-200 p-1" src="${esc(s.logo || 'logo.png')}" onerror="this.style.display='none'">${s.logo ? '<button type="button" class="btn btn-ghost btn-sm" onclick="resetLogo()">ໃຊ້ໂລໂກ້ເດີມ</button>' : ''}</div>
   </div>
   <div class="ar"><b>ຂໍ້ກຳນົດສັ່ງຊື້ & ສະຕັອກ</b>
     <div class="row"><div><label>ຍອດສັ່ງຂັ້ນຕ່ຳ (0 = ບໍ່ກຳນົດ)</label><input class="input input-bordered w-full" type="number" id="s_minOrder" value="${esc(s.minOrder)}"></div><div><label>ແຈ້ງເຕືອນເມື່ອສະຕັອກ ≤</label><input class="input input-bordered w-full" type="number" id="s_lowStock" value="${esc(s.lowStock)}"></div></div>
@@ -1593,6 +1602,30 @@ async function upQR(inp) {
   const r = await api('uploadImage', { data: await readImage(inp.files[0], 900) });
   if (!r.ok) return toast(r.error); A.settings.qrImage = r.url; collectSet(); renderSettings(); toast('ອັບໂຫຼດແລ້ວ — ກົດບັນທຶກ');
 }
+function logoDataUrl(file) {
+  return new Promise((ok, no) => {
+    const fr = new FileReader(); fr.onerror = no;
+    fr.onload = () => {
+      const im = new Image(); im.onerror = no;
+      im.onload = () => {
+        for (const H of [160, 120, 90, 64]) {
+          const c = document.createElement('canvas'), h = Math.min(H, im.naturalHeight), w = Math.round(im.naturalWidth * h / im.naturalHeight);
+          c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h);
+          const u = c.toDataURL('image/png'); if (u.length < 45000) return ok(u);
+        }
+        no(new Error('big'));
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+async function upLogo(inp) {
+  if (!inp.files[0]) return;
+  try { A.settings.logo = await logoDataUrl(inp.files[0]); } catch { return toast('ຮູບໃຫຍ່/ອ່ານບໍ່ໄດ້ — ລອງຮູບອື່ນ'); }
+  collectSet(); renderSettings(); toast('ເລືອກໂລໂກ້ແລ້ວ — ກົດບັນທຶກ');
+}
+function resetLogo() { A.settings.logo = ''; collectSet(); renderSettings(); toast('ກົດບັນທຶກເພື່ອໃຊ້ໂລໂກ້ເດີມ'); }
 const SET_KEYS = ['shopName', 'tagline', 'contact', 'phone', 'whatsapp', 'notice', 'themeColor', 'currency', 'minOrder', 'lowStock', 'bankInfo', 'slots', 'notifyEmail', 'i18nExtra'];
 function collectSet() { SET_KEYS.forEach(k => { const e = $('s_' + k); if (e) A.settings[k] = e.value; }); }
 async function saveSet() { collectSet(); const r = await api('saveSettings', { settings: A.settings }); toast(r.ok ? 'ບັນທຶກແລ້ວ ✓' : r.error); if (r.ok) { S = { ...A.settings }; applyTheme(); } }
