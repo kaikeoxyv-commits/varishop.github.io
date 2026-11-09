@@ -247,7 +247,7 @@ function saveJSON(k, v) { memLS[k] = v; try { localStorage.setItem(k, JSON.strin
    (ວະລີຍາວກວ່າຖືກແທນກ່ອນ). ເພີ່ມຄຳແປ: ເພີ່ມແຖວ [ລາວ, ໄທ, English] ໃນ I18N.
    ຊື່/ຄຳອະທິບາຍສິນຄ້າ: ໃສ່ຄຳແປໃນແອດມິນ → ສິນຄ້າ → "ແປພາສາ". */
 const LANGS = { lo: 'ລາວ', th: 'ไทย', en: 'English' };
-let LANG = (() => { try { const q = new URLSearchParams(location.search).get('lang'); if (LANGS[q]) return q; } catch {} return loadJSON('lang', 'lo'); })();
+let LANG = (() => { try { const q = new URLSearchParams(location.search).get('lang'); if (LANGS[q]) return q; } catch {} return 'lo'; })(); // ເປີດລິ້ງປົກກະຕິ = ລາວສະເໝີ; ໄທ/ອັງກິດ ເມື່ອເລືອກພາສາ ຫຼືລິ້ງມີ ?lang=
 if (MODE === 'admin' || !LANGS[LANG]) LANG = 'lo';
 document.documentElement.lang = LANG;
 function setLang(l) { saveJSON('lang', l); try { const u = new URL(location.href); u.searchParams.set('lang', l); location.href = u.toString(); } catch { location.reload(); } }
