@@ -152,12 +152,16 @@ body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!
     <div id="notice" class="hide alert alert-info mb-3 text-sm"></div>
     <button id="reorder" class="hide btn btn-outline btn-primary btn-block mb-3" onclick="reorder()">🔁 ສັ່ງຄືເກົ່າ (ຄັ້ງທີ່ແລ້ວ)</button>
     <div class="card bg-base-100 border border-base-300 shadow-sm p-3 mb-3 gap-2" id="filt">
-      <label class="input input-bordered flex items-center gap-2 m-0">🔍<input id="fSearch" class="grow min-w-0" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ" oninput="F.q=this.value;renderGrid()"></label>
+      <div class="flex gap-2">
+        <label class="input input-bordered flex items-center gap-2 m-0 flex-1 min-w-0">🔍<input id="fSearch" class="grow min-w-0" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ" oninput="F.q=this.value;renderGrid()"></label>
+        <select id="fSize" class="select select-bordered w-36 sm:w-48 shrink-0" onchange="F.size=this.value;renderGrid()"><option value="">ທຸກຂະໜາດ</option></select>
+      </div>
+      <div class="hide"><!-- ຕົວກອງຂະໜາດ/ລຽງ/ລາຄາ ຖືກເຊື່ອງ (ເອົາ class hide ອອກເພື່ອເປີດຄືນ) -->
       <div class="row">
-        <select id="fSize" class="select select-bordered" onchange="F.size=this.value;renderGrid()"><option value="">ທຸກຂະໜາດ</option></select>
         <select id="fSort" class="select select-bordered" onchange="F.sort=this.value;renderGrid()"><option value="">ລຽງຕາມປົກກະຕິ</option><option value="asc">ລາຄາ ຕ່ຳ → ສູງ</option><option value="desc">ລາຄາ ສູງ → ຕ່ຳ</option></select>
       </div>
       <div class="row"><input type="number" id="fMin" class="input input-bordered" placeholder="ລາຄາຕ່ຳສຸດ" oninput="F.min=this.value;renderGrid()"><input type="number" id="fMax" class="input input-bordered" placeholder="ລາຄາສູງສຸດ" oninput="F.max=this.value;renderGrid()"></div>
+      </div>
       <div class="flex flex-wrap gap-2" id="chips"></div>
     </div>
     <div id="grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"><p class="muted col-span-full">ກຳລັງໂຫຼດ...</p></div>
