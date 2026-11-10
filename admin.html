@@ -1645,7 +1645,7 @@ function renderSettings() {
   <div class="ar"><b>ການຈັດສົ່ງ & ແຈ້ງເຕືອນ</b>
     <label>ຊ່ວງເວລາຈັດສົ່ງ (ແຍກດ້ວຍເຄື່ອງໝາຍ , )</label><input class="input input-bordered w-full" id="s_slots" value="${esc(s.slots)}">
     <label>ອີເມວຮັບແຈ້ງເຕືອນ (ອໍເດີໃໝ່, ສະຕັອກໃກ້ໝົດ, ສະຫຼຸບການສົ່ງປະຈຳວັນ)</label><input class="input input-bordered w-full" type="email" id="s_notifyEmail" value="${esc(s.notifyEmail)}" placeholder="you@gmail.com">
-    <label>ອີເມວຜູ້ຮັບຜິດຊອບແຍກຕາມກຸ່ມຈັດສົ່ງ — ແຖວລະ 1 ກຸ່ມ ຮູບແບບ: <code>ຊື່ກຸ່ມ = email1, email2</code> (ຊື່ກຸ່ມຕ້ອງຕົງກັບ "ກຸ່ມຈັດສົ່ງ" ທີ່ຕັ້ງໃນສິນຄ້າ). ແຕ່ລະຄົນໄດ້ຮັບສະເພາະລາຍການຂອງກຸ່ມຕົນ</label><textarea class="textarea textarea-bordered w-full" id="s_groupEmails" rows="3" placeholder="ນ້ຳແພັກ = agent@gmail.com&#10;ນ້ຳຕຸກໃຫຍ່ = office@gmail.com">${esc(s.groupEmails || '')}</textarea>
+    <label>ອີເມວຜູ້ຮັບຜິດຊອບແຍກຕາມກຸ່ມຈັດສົ່ງ — ແຖວລະ 1 ກຸ່ມ ຮູບແບບ: <code>ຊື່ກຸ່ມ = email1, tg:ChatID</code> (ຊື່ກຸ່ມຕ້ອງຕົງກັບ "ກຸ່ມຈັດສົ່ງ" ທີ່ຕັ້ງໃນສິນຄ້າ; tg:ChatID = ສົ່ງເຂົ້າ Telegram ກຸ່ມ ຕ້ອງຕັ້ງ TELEGRAM_TOKEN ກ່ອນ). ແຕ່ລະກຸ່ມໄດ້ຮັບສະເພາະລາຍການຂອງຕົນ</label><textarea class="textarea textarea-bordered w-full" id="s_groupEmails" rows="3" placeholder="ນ້ຳແພັກ = agent@gmail.com, tg:-1001234567890&#10;ນ້ຳຕຸກໃຫຍ່ = tg:-1009876543210">${esc(s.groupEmails || '')}</textarea>
   </div>
   <div class="ar"><b>ຄຳແປພາສາເພີ່ມເຕີມ (ໜ້າລູກຄ້າ)</b>
     <div class="muted">ແປຊື່ຮ້ານ, ຄຳໂຄສະນາ, ປະກາດ, ໝວດໝູ່, ຕົວເລືອກ... ແຖວລະ 1 ຄຳ ຮູບແບບ: <code>ລາວ | ไทย | English</code> (ຄຳລາວຕ້ອງຕົງກັບທີ່ຂຽນໄວ້ແທ້ໆ)</div>
