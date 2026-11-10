@@ -596,6 +596,7 @@ async function api(action, data = {}) {
     return await r.json();
   } catch (e) { return { ok: false, error: 'ເຊື່ອມຕໍ່ບໍ່ໄດ້ — ກວດອິນເຕີເນັດ ແລະ API_URL' }; }
 }
+window.addEventListener('unhandledrejection', e => { try { toast('ຜິດພາດ: ' + ((e.reason && e.reason.message) || 'ອັບໂຫຼດບໍ່ສຳເລັດ')); } catch {} });
 const memDemo = {}; // ສຳຮອງເມື່ອ browser ບໍ່ອະນຸຍາດ localStorage
 function mock(action, d) {
   const g = (k, def) => { try { return JSON.parse(localStorage.getItem('demo_' + k)) || (memDemo[k] || def) } catch { return memDemo[k] || def } };
@@ -686,10 +687,10 @@ function readImage(file, max = 1000) {
       im.onload = () => {
         const k = Math.min(1, max / Math.max(im.width, im.height));
         const c = document.createElement('canvas'); c.width = im.width * k; c.height = im.height * k;
-        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        const cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(im, 0, 0, c.width, c.height);
         res(c.toDataURL('image/jpeg', .8));
       };
-      im.onerror = rej; im.src = fr.result;
+      im.onerror = () => rej(new Error('ອ່ານຮູບບໍ່ໄດ້ — ໃຊ້ໄຟລ໌ JPG ຫຼື PNG')); im.src = fr.result;
     };
     fr.readAsDataURL(file);
   });
@@ -1619,7 +1620,7 @@ function delProd(i) { if (!confirm('ລຶບສິນຄ້ານີ້?')) ret
 async function upProd(inp, i) {
   if (!inp.files[0]) return; collectProds(); toast('ກຳລັງອັບໂຫຼດຮູບ...');
   const r = await api('uploadImage', { data: await readImage(inp.files[0], 900) });
-  if (!r.ok) return toast(r.error); A.products[i].image = r.url; renderProducts(); toast('ອັບໂຫຼດແລ້ວ — ຢ່າລືມກົດບັນທຶກ');
+  if (!r.ok || !r.url) return toast(r.error || 'ອັບໂຫຼດບໍ່ສຳເລັດ — ລອງຮູບອື່ນ'); A.products[i].image = r.url; renderProducts(); toast('ອັບໂຫຼດແລ້ວ — ຢ່າລືມກົດບັນທຶກ');
 }
 async function saveProds() { collectProds(); const r = await api('saveProducts', { products: A.products }); toast(r.ok ? 'ບັນທຶກສິນຄ້າແລ້ວ ✓' : r.error); }
 
