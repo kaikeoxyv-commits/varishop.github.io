@@ -663,13 +663,13 @@ function mock(action, d) {
     }
     case 'order': {
       const qById = {}; d.items.forEach(i => qById[i.id] = (qById[i.id] || 0) + i.qty);
-      const items = d.items.map(i => { const p = products.find(x => x.id === i.id); return { id: p.id, name: p.name, unit: p.unit, deposit: p.deposit, qty: i.qty, opt: i.opt || '', price: unitPrice(p, qById[i.id]) }; });
+      const items = d.items.map(i => { const p = products.find(x => x.id === i.id); return { id: p.id, name: p.name, unit: p.unit, deposit: p.deposit, qty: i.qty, opt: i.opt || '', price: unitPrice(p, qById[i.id]), grp: p.group || '' }; });
       const subtotal = items.reduce((a, i) => a + i.price * i.qty, 0);
       if (subtotal < (+settings.minOrder || 0)) return { ok: false, error: 'ຍອດສັ່ງຂັ້ນຕ່ຳ ' + settings.minOrder };
       const bottleQty = d.returnBottle ? 0 : items.reduce((a, i) => a + (i.deposit > 0 ? i.qty : 0), 0);
       const bottleDeposit = d.returnBottle ? 0 : items.reduce((a, i) => a + (i.deposit || 0) * i.qty, 0), total = subtotal + bottleDeposit;
       const payNow = d.payMethod === 'qr' ? total : 0, id = newId();
-      orders.push({ orderId: id, time: new Date().toISOString(), name: d.name, phone: d.phone, mapLink: d.mapLink, address: d.address, deliveryDate: d.deliveryDate, deliverySlot: d.deliverySlot, housePhoto: d.housePhoto, itemsText: items.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), itemsJson: JSON.stringify(items), subtotal, delivery: 0, bottleDeposit, total, payType: 'full', payNow, payMethod: d.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', slip: d.slip, status: (d.payMethod === 'qr' && !d.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', note: '', acct: (d.acctPhone && accOk(d.acctPhone, d.token)) ? digits(d.acctPhone) : '', bottleQty, bottleReturned: 0, custNote: d.custNote || '', bottleStatus: bottleQty > 0 ? 'ຖືກະຕຸກ' : '', repeat: [7, 14, 30].includes(+d.repeat) ? +d.repeat : 0 });
+      orders.push({ orderId: id, time: new Date().toISOString(), name: d.name, phone: d.phone, mapLink: d.mapLink, address: d.address, deliveryDate: d.deliveryDate, deliverySlot: d.deliverySlot, housePhoto: d.housePhoto, itemsText: items.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), itemsJson: JSON.stringify(items), subtotal, delivery: 0, bottleDeposit, total, payType: 'full', payNow, payMethod: d.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', slip: d.slip, status: (d.payMethod === 'qr' && !d.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', note: '', acct: (d.acctPhone && accOk(d.acctPhone, d.token)) ? digits(d.acctPhone) : '', bottleQty, bottleReturned: 0, custNote: d.custNote || '', bottleStatus: bottleQty > 0 ? 'ຖືກະຕຸກ' : '', repeat: [7, 14, 30].includes(+d.repeat) ? +d.repeat : 0, groups: [...new Set(items.map(i => i.grp).filter(Boolean))].sort().join(',') });
       stockAdj(items, -1); s('orders', orders); return { ok: true, orderId: id, total, payNow };
     }
   }
@@ -1338,10 +1338,16 @@ const validOrders = () => A.orders.filter(o => o.status !== 'ຍົກເລີ�
 const parseItems = o => { try { return JSON.parse(o.itemsJson || '[]'); } catch { return []; } };
 
 /* --- ອໍເດີ --- */
-let OF = { q: '', st: '' };
+let OF = { q: '', st: '', g: '' };
+/* ກຸ່ມຈັດສົ່ງ (ເຊັ່ນ ນ້ຳແພັກ / ນ້ຳຕຸກໃຫຍ່): ມາຈາກສິນຄ້າ ແລະອໍເດີທີ່ມີຢູ່ */
+const groupsOfOrder = o => String(o.groups || '').split(',').map(x => x.trim()).filter(Boolean);
+const allGroups = () => [...new Set([...(A.products || []).map(p => p.group), ...A.orders.flatMap(groupsOfOrder)].filter(Boolean))].sort();
+const itemsTextFor = (o, g) => g ? parseItems(o).filter(i => i.grp === g).map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', ') : o.itemsText;
+const groupSelect = (id, cur, fn) => { const gs = allGroups(); return gs.length ? `<select id="${id}" class="fix" style="width:auto" onchange="${fn}"><option value="">ທຸກກຸ່ມ</option>${gs.map(g => `<option ${g === cur ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>` : ''; };
 function renderOrders() {
   if (!$('oList')) {
     $('t-orders').innerHTML = `<div class="row noprint" style="margin-bottom:10px"><input class="input input-bordered w-full" id="oSearch" placeholder="ຊື່ / ເບີ / ເລກອໍເດີ" oninput="OF.q=this.value;fillOrders()">
+      ${groupSelect('oGroup', OF.g, "OF.g=this.value;fillOrders()")}
       <select id="oStatus" class="fix" style="width:auto" onchange="OF.st=this.value;fillOrders()"><option value="">ທຸກສະຖານະ</option>${STATUS.map(s => `<option>${s}</option>`).join('')}</select>
       <button class="btn btn-ghost bg-base-200 btn-sm fix" onclick="loadAdmin()">↻</button></div><div id="oList"></div>`;
   }
@@ -1349,7 +1355,7 @@ function renderOrders() {
 }
 function fillOrders() {
   const q = OF.q.trim().toLowerCase();
-  const list = A.orders.filter(o => (!OF.st || o.status === OF.st) && (!q || (o.name + ' ' + phoneOf(o.phone) + ' ' + o.orderId).toLowerCase().includes(q)));
+  const list = A.orders.filter(o => (!OF.st || o.status === OF.st) && (!OF.g || groupsOfOrder(o).includes(OF.g)) && (!q || (o.name + ' ' + phoneOf(o.phone) + ' ' + o.orderId).toLowerCase().includes(q)));
   $('oList').innerHTML = (list.length ? list.slice(0, 100).map(orderCard).join('') : '<p class="muted">ບໍ່ມີອໍເດີ</p>') + (list.length > 100 ? `<p class="muted">ສະແດງ 100 ຈາກ ${list.length} — ໃຊ້ຊ່ອງຄົ້ນຫາ</p>` : '');
 }
 /* ປຸ່ມຂັ້ນຕອນດ່ວນໃນບັດອໍເດີ: ຢືນຢັນຮັບອໍເດີ → ເລີ່ມຈັດສົ່ງ → ສົ່ງແລ້ວ (ກົດເທື່ອດຽວ ບັນທຶກທັນທີ ແລະລູກຄ້າເຫັນໃນ 🧾) */
@@ -1436,6 +1442,7 @@ function orderCard(x) {
   const id = x.orderId;
   return `<div class="ar" id="oc_${id}">
       <div class="line"><b>${esc(id)}</b><span class="muted">${esc(String(x.time).replace('T', ' ').slice(0, 16))}</span></div>
+      ${groupsOfOrder(x).length ? `<div class="flex flex-wrap gap-1 mb-1">${groupsOfOrder(x).map(g => `<span class="badge badge-primary badge-outline">${esc(g)}</span>`).join('')}</div>` : ''}
       ${orderActions(x)}
       <div class="row"><div><label>ຊື່</label><input class="input input-bordered w-full" id="o_name_${id}" value="${esc(x.name)}"></div><div><label>ເບີໂທ</label><input class="input input-bordered w-full" id="o_phone_${id}" value="${esc(phoneOf(x.phone))}"></div></div>
       <label>ທີ່ຢູ່</label><textarea class="textarea textarea-bordered w-full" id="o_address_${id}" rows="2">${esc(x.address)}</textarea>
@@ -1469,23 +1476,23 @@ async function saveOrder(id) {
 }
 
 /* --- ຈັດສົ່ງປະຈຳວັນ (ພິມໄດ້) --- */
-let DV = ymd(new Date());
+let DV = ymd(new Date()), DG = '';
 function renderDelivery() {
-  const list = validOrders().filter(o => dstr(o.deliveryDate) === DV);
+  const list = validOrders().filter(o => dstr(o.deliveryDate) === DV && (!DG || groupsOfOrder(o).includes(DG)));
   const slots = String(S.slots || '').split(',').map(x => x.trim()).filter(Boolean);
   const keys = [...new Set([...slots, ...list.map(o => o.deliverySlot || '—')])];
   const load = {};
-  list.filter(o => o.status !== 'ສຳເລັດ').forEach(o => parseItems(o).forEach(i => { const k = i.name + ' (' + i.unit + ')'; load[k] = (load[k] || 0) + i.qty; }));
+  list.filter(o => o.status !== 'ສຳເລັດ').forEach(o => parseItems(o).filter(i => !DG || i.grp === DG).forEach(i => { const k = i.name + ' (' + i.unit + ')'; load[k] = (load[k] || 0) + i.qty; }));
   const done = list.filter(o => o.status === 'ສຳເລັດ').length, cash = list.filter(o => o.status !== 'ສຳເລັດ').reduce((a, o) => a + Math.max(0, o.total - o.payNow), 0);
-  $('t-delivery').innerHTML = `<div class="row noprint" style="margin-bottom:10px"><input class="input input-bordered w-full" type="date" id="dvDate" value="${DV}" onchange="DV=this.value;renderDelivery()"><button class="btn btn-primary btn-sm fix" onclick="window.print()">🖨 ພິມ</button></div>
-    <div class="ar"><b>🚚 ໃບຈັດສົ່ງ ${esc(DV)}</b> <span class="muted">· ${list.length} ອໍເດີ (ສົ່ງແລ້ວ ${done})</span>
+  $('t-delivery').innerHTML = `<div class="row noprint" style="margin-bottom:10px"><input class="input input-bordered w-full" type="date" id="dvDate" value="${DV}" onchange="DV=this.value;renderDelivery()">${groupSelect('dvGroup', DG, "DG=this.value;renderDelivery()")}<button class="btn btn-primary btn-sm fix" onclick="window.print()">🖨 ພິມ</button></div>
+    <div class="ar"><b>🚚 ໃບຈັດສົ່ງ ${esc(DV)}${DG ? ' · ' + esc(DG) : ''}</b> <span class="muted">· ${list.length} ອໍເດີ (ສົ່ງແລ້ວ ${done})</span>
       <div style="margin-top:6px"><b>ສິນຄ້າທີ່ຕ້ອງໂຫຼດ:</b> ${Object.keys(load).length ? Object.entries(load).map(([k, v]) => `${esc(k)} × <b>${v}</b>`).join(' · ') : '—'}</div>
       <div class="muted">ເງິນທີ່ຕ້ອງເກັບປາຍທາງລວມ: <b>${money(cash)}</b></div></div>` +
     (list.length ? keys.map(k => { const g = list.filter(o => (o.deliverySlot || '—') === k); return g.length ? `<h3 style="margin:14px 0 6px;font-size:15px">⏰ ${esc(k)} (${g.length})</h3>` + g.map(o => `<div class="ar">
         <div class="line"><b>${esc(o.name)}</b><span class="badge ${sCls(o.status)}">${esc(o.status)}</span></div>
         <div>📞 <a href="tel:${digits(o.phone)}">${esc(phoneOf(o.phone))}</a></div>
         <div>${esc(o.address || '')} ${/^https?:\/\//.test(o.mapLink || '') ? `<a href="${esc(o.mapLink)}" target="_blank" rel="noopener">📍 ແຜນທີ່</a>` : ''}</div>
-        <div class="muted">${esc(o.itemsText)}${Number(o.bottleQty) && o.bottleStatus !== 'ຄືນແລ້ວ' ? ` · ມັດຈຳກະຕຸກ ${money(o.bottleDeposit)}` : ''}</div>
+        <div class="muted">${esc(itemsTextFor(o, DG))}${DG && groupsOfOrder(o).length > 1 ? ` <span class="badge badge-warning badge-sm">ມີກຸ່ມອື່ນນຳ: ${esc(groupsOfOrder(o).filter(g => g !== DG).join(', '))}</span>` : ''}${Number(o.bottleQty) && o.bottleStatus !== 'ຄືນແລ້ວ' ? ` · ມັດຈຳກະຕຸກ ${money(o.bottleDeposit)}` : ''}</div>
         <div class="line"><span>ເກັບເງິນ: <b>${money(Math.max(0, o.total - o.payNow))}</b></span>
         ${o.status !== 'ສຳເລັດ' ? `<button class="btn btn-primary btn-sm noprint" onclick="markDone('${o.orderId}')">✔ ສົ່ງແລ້ວ</button>` : ''}</div>
         ${(() => { const h = heldFor(o.phone); return h.held ? `<div class="row noprint"><div class="muted">🫙 ລູກຄ້າຖືກະຕຸກ <b>${h.held}</b> ໜ່ວຍ (ມັດຈຳ ${money(h.money)})</div><input type="number" min="1" max="${h.held}" value="${h.held}" id="dr_${o.orderId}" class="input input-bordered input-sm fix" style="width:5rem"><button class="btn btn-outline btn-primary btn-sm fix" onclick="applyReturnDelivery('${o.orderId}')">ຮັບກະຕຸກຄືນ</button></div>` : ''; })()}
@@ -1577,7 +1584,7 @@ function exportReport() {
 
 /* --- ສິນຄ້າ (ເຈົ້າຂອງ) --- */
 function renderProducts() {
-  $('t-products').innerHTML = A.products.map((p, i) => `
+  $('t-products').innerHTML = `<datalist id="groupList">${allGroups().map(g => `<option value="${esc(g)}">`).join('')}</datalist>` + A.products.map((p, i) => `
     <div class="ar">
       <div class="row">
         <div class="fix">${p.image ? `<img src="${esc(p.image)}" style="width:64px;height:64px;object-fit:cover;border-radius:10px">` : '<div style="width:64px;height:64px;background:#e9eff1;border-radius:10px"></div>'}</div>
@@ -1586,6 +1593,7 @@ function renderProducts() {
       <div class="row"><div><label>ລາຄາ</label><input class="input input-bordered w-full" type="number" id="p_price_${i}" value="${p.price}"></div>
         <div><label>ຫົວໜ່ວຍ</label><input class="input input-bordered w-full" id="p_unit_${i}" value="${esc(p.unit)}"></div>
         <div><label>ສະຕັອກ</label><input class="input input-bordered w-full" type="number" id="p_stock_${i}" value="${p.stock}"></div></div>
+      <label>ກຸ່ມຈັດສົ່ງ / ຜູ້ຮັບຜິດຊອບ (ເຊັ່ນ ນ້ຳແພັກ ຫຼື ນ້ຳຕຸກໃຫຍ່) — ໃຊ້ແຍກອໍເດີ ແລະອີເມວແຈ້ງເຕືອນ</label><input class="input input-bordered w-full" id="p_group_${i}" list="groupList" value="${esc(p.group || '')}" placeholder="ເວັ້ນວ່າງ = ບໍ່ແຍກກຸ່ມ">
       <label>ມັດຈຳກະຕຸກຕໍ່ 1 ໜ່ວຍ (0 = ບໍ່ມີມັດຈຳ)</label><input class="input input-bordered w-full" type="number" id="p_deposit_${i}" value="${p.deposit || 0}">
       <label>ລາຄາຂັ້ນບັນໄດ (ເຊັ່ນ 10:14000,20:13000 = ຊື້ 10+ ລາຄາ 14000/ໜ່ວຍ, 20+ ລາຄາ 13000/ໜ່ວຍ)</label><input class="input input-bordered w-full" id="p_tiers_${i}" value="${esc(p.tiers || '')}" placeholder="ເວັ້ນວ່າງ = ບໍ່ມີ">
       <div class="row"><div><label>ໝວດໝູ່</label><input class="input input-bordered w-full" id="p_category_${i}" value="${esc(p.category || '')}" placeholder="ເຊັ່ນ ນ້ຳດື່ມ"></div><div><label>ຂະໜາດ</label><input class="input input-bordered w-full" id="p_size_${i}" value="${esc(p.size || '')}" placeholder="ເຊັ່ນ 20 ລິດ"></div></div>
@@ -1603,9 +1611,9 @@ function renderProducts() {
     <p class="muted">ສະຕັອກຈະຖືກຕັດອັດຕະໂນມັດເມື່ອມີອໍເດີ ແລະຄືນເມື່ອຍົກເລີກອໍເດີ. ໃສ່ 9999 ຫຼືເວັ້ນວ່າງ = ບໍ່ຈຳກັດ.</p>`;
 }
 function collectProds() {
-  A.products.forEach((p, i) => { p.name = $('p_name_' + i).value; p.price = Number($('p_price_' + i).value) || 0; p.unit = $('p_unit_' + i).value; p.stock = $('p_stock_' + i).value === '' ? 9999 : Number($('p_stock_' + i).value); p.desc = $('p_desc_' + i).value; p.deposit = Number($('p_deposit_' + i).value) || 0; p.tiers = $('p_tiers_' + i).value.trim(); p.category = $('p_category_' + i).value.trim(); p.size = $('p_size_' + i).value.trim(); p.options = $('p_options_' + i).value.trim(); p.nameTh = $('p_nameTh_' + i).value.trim(); p.nameEn = $('p_nameEn_' + i).value.trim(); p.descTh = $('p_descTh_' + i).value.trim(); p.descEn = $('p_descEn_' + i).value.trim(); p.active = $('p_active_' + i).checked; });
+  A.products.forEach((p, i) => { p.name = $('p_name_' + i).value; p.price = Number($('p_price_' + i).value) || 0; p.unit = $('p_unit_' + i).value; p.stock = $('p_stock_' + i).value === '' ? 9999 : Number($('p_stock_' + i).value); p.desc = $('p_desc_' + i).value; p.deposit = Number($('p_deposit_' + i).value) || 0; p.tiers = $('p_tiers_' + i).value.trim(); p.category = $('p_category_' + i).value.trim(); p.group = $('p_group_' + i).value.trim(); p.size = $('p_size_' + i).value.trim(); p.options = $('p_options_' + i).value.trim(); p.nameTh = $('p_nameTh_' + i).value.trim(); p.nameEn = $('p_nameEn_' + i).value.trim(); p.descTh = $('p_descTh_' + i).value.trim(); p.descEn = $('p_descEn_' + i).value.trim(); p.active = $('p_active_' + i).checked; });
 }
-function addProd() { collectProds(); A.products.push({ id: 'p' + Date.now(), name: 'ສິນຄ້າໃໝ່', price: 0, unit: 'ອັນ', image: '', desc: '', stock: 100, deposit: 0, tiers: '', category: '', size: '', options: '', nameTh: '', nameEn: '', descTh: '', descEn: '', active: true }); renderProducts(); }
+function addProd() { collectProds(); A.products.push({ id: 'p' + Date.now(), name: 'ສິນຄ້າໃໝ່', price: 0, unit: 'ອັນ', image: '', desc: '', stock: 100, deposit: 0, tiers: '', category: '', size: '', options: '', nameTh: '', nameEn: '', descTh: '', descEn: '', group: '', active: true }); renderProducts(); }
 function delProd(i) { if (!confirm('ລຶບສິນຄ້ານີ້?')) return; collectProds(); A.products.splice(i, 1); renderProducts(); }
 async function upProd(inp, i) {
   if (!inp.files[0]) return; collectProds(); toast('ກຳລັງອັບໂຫຼດຮູບ...');
@@ -1635,6 +1643,7 @@ function renderSettings() {
   <div class="ar"><b>ການຈັດສົ່ງ & ແຈ້ງເຕືອນ</b>
     <label>ຊ່ວງເວລາຈັດສົ່ງ (ແຍກດ້ວຍເຄື່ອງໝາຍ , )</label><input class="input input-bordered w-full" id="s_slots" value="${esc(s.slots)}">
     <label>ອີເມວຮັບແຈ້ງເຕືອນ (ອໍເດີໃໝ່, ສະຕັອກໃກ້ໝົດ, ສະຫຼຸບການສົ່ງປະຈຳວັນ)</label><input class="input input-bordered w-full" type="email" id="s_notifyEmail" value="${esc(s.notifyEmail)}" placeholder="you@gmail.com">
+    <label>ອີເມວຜູ້ຮັບຜິດຊອບແຍກຕາມກຸ່ມຈັດສົ່ງ — ແຖວລະ 1 ກຸ່ມ ຮູບແບບ: <code>ຊື່ກຸ່ມ = email1, email2</code> (ຊື່ກຸ່ມຕ້ອງຕົງກັບ "ກຸ່ມຈັດສົ່ງ" ທີ່ຕັ້ງໃນສິນຄ້າ). ແຕ່ລະຄົນໄດ້ຮັບສະເພາະລາຍການຂອງກຸ່ມຕົນ</label><textarea class="textarea textarea-bordered w-full" id="s_groupEmails" rows="3" placeholder="ນ້ຳແພັກ = agent@gmail.com&#10;ນ້ຳຕຸກໃຫຍ່ = office@gmail.com">${esc(s.groupEmails || '')}</textarea>
   </div>
   <div class="ar"><b>ຄຳແປພາສາເພີ່ມເຕີມ (ໜ້າລູກຄ້າ)</b>
     <div class="muted">ແປຊື່ຮ້ານ, ຄຳໂຄສະນາ, ປະກາດ, ໝວດໝູ່, ຕົວເລືອກ... ແຖວລະ 1 ຄຳ ຮູບແບບ: <code>ລາວ | ไทย | English</code> (ຄຳລາວຕ້ອງຕົງກັບທີ່ຂຽນໄວ້ແທ້ໆ)</div>
@@ -1680,7 +1689,7 @@ async function upLogo(inp) {
   collectSet(); renderSettings(); toast('ເລືອກໂລໂກ້ແລ້ວ — ກົດບັນທຶກ');
 }
 function resetLogo() { A.settings.logo = ''; collectSet(); renderSettings(); toast('ກົດບັນທຶກເພື່ອໃຊ້ໂລໂກ້ເດີມ'); }
-const SET_KEYS = ['shopName', 'tagline', 'contact', 'phone', 'whatsapp', 'notice', 'themeColor', 'currency', 'minOrder', 'lowStock', 'bankInfo', 'slots', 'notifyEmail', 'i18nExtra'];
+const SET_KEYS = ['shopName', 'tagline', 'contact', 'phone', 'whatsapp', 'notice', 'themeColor', 'currency', 'minOrder', 'lowStock', 'bankInfo', 'slots', 'notifyEmail', 'groupEmails', 'i18nExtra'];
 function collectSet() { SET_KEYS.forEach(k => { const e = $('s_' + k); if (e) A.settings[k] = e.value; }); }
 async function saveSet() { collectSet(); const r = await api('saveSettings', { settings: A.settings }); toast(r.ok ? 'ບັນທຶກແລ້ວ ✓' : r.error); if (r.ok) { S = { ...A.settings }; applyTheme(); } }
 
