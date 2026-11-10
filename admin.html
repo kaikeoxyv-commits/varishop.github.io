@@ -1615,12 +1615,12 @@ function renderProducts() {
 function collectProds() {
   A.products.forEach((p, i) => { p.name = $('p_name_' + i).value; p.price = Number($('p_price_' + i).value) || 0; p.unit = $('p_unit_' + i).value; p.stock = $('p_stock_' + i).value === '' ? 9999 : Number($('p_stock_' + i).value); p.desc = $('p_desc_' + i).value; p.deposit = Number($('p_deposit_' + i).value) || 0; p.tiers = $('p_tiers_' + i).value.trim(); p.category = $('p_category_' + i).value.trim(); p.group = $('p_group_' + i).value.trim(); p.size = $('p_size_' + i).value.trim(); p.options = $('p_options_' + i).value.trim(); p.nameTh = $('p_nameTh_' + i).value.trim(); p.nameEn = $('p_nameEn_' + i).value.trim(); p.descTh = $('p_descTh_' + i).value.trim(); p.descEn = $('p_descEn_' + i).value.trim(); p.active = $('p_active_' + i).checked; });
 }
-function addProd() { collectProds(); A.products.push({ id: 'p' + Date.now(), name: 'ສິນຄ້າໃໝ່', price: 0, unit: 'ອັນ', image: '', desc: '', stock: 100, deposit: 0, tiers: '', category: '', size: '', options: '', nameTh: '', nameEn: '', descTh: '', descEn: '', group: '', active: true }); renderProducts(); }
+function addProd() { collectProds(); A.products.push({ id: 'p' + Date.now(), name: 'ສິນຄ້າໃໝ່', price: 0, unit: 'ອັນ', image: '', desc: '', stock: 100, deposit: 0, tiers: '', category: '', size: '', options: '', nameTh: '', nameEn: '', descTh: '', descEn: '', group: '', active: false }); renderProducts(); const nn = $('p_name_' + (A.products.length - 1)); if (nn) { nn.scrollIntoView({ block: 'center' }); nn.select(); } toast('ເພີ່ມແລ້ວ — ໃສ່ຂໍ້ມູນ + ຕິກ "ສະແດງໃນຮ້ານ" ແລ້ວກົດບັນທຶກ'); }
 function delProd(i) { if (!confirm('ລຶບສິນຄ້ານີ້?')) return; collectProds(); A.products.splice(i, 1); renderProducts(); }
 async function upProd(inp, i) {
   if (!inp.files[0]) return; collectProds(); toast('ກຳລັງອັບໂຫຼດຮູບ...');
   const r = await api('uploadImage', { data: await readImage(inp.files[0], 900) });
-  if (!r.ok || !r.url) return toast(r.error || 'ອັບໂຫຼດບໍ່ສຳເລັດ — ລອງຮູບອື່ນ'); A.products[i].image = r.url; renderProducts(); toast('ອັບໂຫຼດແລ້ວ — ຢ່າລືມກົດບັນທຶກ');
+  if (!r.ok || !r.url) return toast(r.error || 'ອັບໂຫຼດບໍ່ສຳເລັດ — ລອງຮູບອື່ນ'); A.products[i].image = r.url; renderProducts(); await saveProds(); toast('ອັບໂຫຼດຮູບ ແລະບັນທຶກແລ້ວ ✓');
 }
 async function saveProds() { collectProds(); const r = await api('saveProducts', { products: A.products }); toast(r.ok ? 'ບັນທຶກສິນຄ້າແລ້ວ ✓' : r.error); }
 
