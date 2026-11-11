@@ -244,7 +244,7 @@ const MODE = "shop";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let S = {}, P = [], cart = {}, PW = '', ROLE = '';
+let S = {}, P = [], cart = {}, PW = '', ROLE = '', GROUP = ''; // GROUP = ຊື່ກຸ່ມ ຖ້າລັອກອິນເປັນຜູ້ຮັບຜິດຊອບກຸ່ມ (ເຫັນສະເພາະອໍເດີຂອງກຸ່ມຕົນ)
 const money = n => (Number(n) || 0).toLocaleString('en-US') + ' ' + (S.currency || '₭');
 const toast = (m) => { const t = $('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2600); };
 const memLS = {}; // ສຳຮອງເມື່ອ browser ບໍ່ອະນຸຍາດ localStorage
@@ -605,7 +605,16 @@ function mock(action, d) {
     { id: 'p1', name: 'ນ້ຳດື່ມ 20 ລິດ', price: 15000, unit: 'ຖັງ', image: '', desc: 'ນ້ຳດື່ມສະອາດ ຜ່ານການກັ່ນຕອງ', stock: 100, active: true, deposit: 20000, tiers: '10:14000,20:13000', category: 'ນ້ຳດື່ມ', size: '20 ລິດ', options: 'ຝາ:ຟ້າ|ຂາວ' },
     { id: 'p2', name: 'ນ້ຳດື່ມ 1.5 ລິດ (ແພັກ 12)', price: 40000, unit: 'ແພັກ', image: '', desc: 'ແພັກ 12 ຂວດ', stock: 100, active: true, deposit: 0, tiers: '', category: 'ນ້ຳດື່ມ', size: '1.5 ລິດ', options: '' }]);
   const orders = g('orders', []);
-  const role = d.password === '1234' ? 'owner' : d.password === 'staff' ? 'staff' : '';
+  const grpName = String(d.password || '').startsWith('grp:') ? String(d.password).slice(4) : ''; // ທົດລອງ: ລະຫັດ "grp:ຊື່ກຸ່ມ" = ຜູ້ຮັບຜິດຊອບກຸ່ມ
+  const role = d.password === '1234' ? 'owner' : (d.password === 'staff' || grpName) ? 'staff' : '';
+  const gList = o => String(o.groups || '').split(',').filter(Boolean);
+  const gTot = (o, gn) => { const its = JSON.parse(o.itemsJson || '[]').filter(i => i.grp === gn), hd = Number(o.bottleDeposit) > 0; return its.reduce((a, i) => a + i.price * i.qty + (hd ? (i.deposit || 0) * i.qty : 0), 0); };
+  const gPaid = (o, gn) => { let gp = {}; try { gp = JSON.parse(o.groupPaid || '{}'); } catch {} return gp[gn] !== undefined ? (+gp[gn] || 0) : (o.total > 0 ? Math.round((+o.payNow || 0) * gTot(o, gn) / o.total) : 0); };
+  const gView = (o, gn) => {
+    const its = JSON.parse(o.itemsJson || '[]').filter(i => i.grp === gn); let gs = {}; try { gs = JSON.parse(o.groupStatus || '{}'); } catch {}
+    const sub = its.reduce((a, i) => a + i.price * i.qty, 0), hd = Number(o.bottleDeposit) > 0, dep = hd ? its.reduce((a, i) => a + (i.deposit || 0) * i.qty, 0) : 0, bq = hd ? its.reduce((a, i) => a + (i.deposit > 0 ? i.qty : 0), 0) : 0, tot = sub + dep;
+    return { ...o, itemsJson: JSON.stringify(its), itemsText: its.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), subtotal: sub, bottleDeposit: dep, bottleQty: bq, total: tot, payNow: gPaid(o, gn), bottleReturned: Math.min(+o.bottleReturned || 0, bq), status: gs[gn] || o.status, overallStatus: o.status, groups: gn, groupStatus: '', slip: '', acct: '' };
+  };
   if (['adminLogin', 'adminData', 'updateOrder', 'repeatOrder', 'saveProducts', 'saveSettings', 'uploadImage'].includes(action)) {
     if (!role) return { ok: false, error: 'ລະຫັດຜ່ານບໍ່ຖືກ' };
     if (['saveProducts', 'saveSettings', 'uploadImage'].includes(action) && role !== 'owner') return { ok: false, error: 'ສະເພາະເຈົ້າຂອງຮ້ານ' };
@@ -638,15 +647,33 @@ function mock(action, d) {
       o.acct = digits(d.phone); s('orders', orders); return { ok: true };
     }
     case 'config': return { ok: true, settings, products: products.filter(p => p.active && p.stock > 0) };
-    case 'adminLogin': return { ok: true, role };
-    case 'adminData': return { ok: true, role, settings, products: role === 'owner' ? products : [], orders: [...orders].reverse() };
+    case 'adminLogin': return { ok: true, role, group: grpName };
+    case 'adminData': return { ok: true, role, group: grpName, settings, products: role === 'owner' ? products : [], orders: (grpName ? orders.filter(o => gList(o).includes(grpName)).map(o => gView(o, grpName)) : [...orders]).reverse() };
     case 'saveProducts': s('products', d.products); return { ok: true };
     case 'saveSettings': s('settings', { ...settings, ...d.settings }); return { ok: true };
     case 'uploadImage': return { ok: true, url: d.data };
     case 'updateOrder': {
       const o = orders.find(x => x.orderId === d.orderId); if (!o) return { ok: false, error: 'ບໍ່ພົບອໍເດີ' };
       const items = JSON.parse(o.itemsJson || '[]');
-      if (d.fields.status && d.fields.status !== o.status) { if (d.fields.status === 'ຍົກເລີກ') stockAdj(items, 1); else if (o.status === 'ຍົກເລີກ') stockAdj(items, -1); }
+      if (grpName) { // ຜູ້ຮັບຜິດຊອບກຸ່ມ: ແກ້ສະເພາະສະຖານະຂອງກຸ່ມຕົນ + ໝາຍເຫດ/ກະຕຸກ
+        if (!gList(o).includes(grpName)) return { ok: false, error: 'ອໍເດີນີ້ບໍ່ແມ່ນຂອງກຸ່ມຂອງທ່ານ' };
+        ['note', 'bottleStatus', 'bottleReturned'].forEach(k => { if (k in d.fields) o[k] = d.fields[k]; });
+        if ('payNow' in d.fields) {
+          const amt = Math.max(0, Math.min(+d.fields.payNow || 0, gTot(o, grpName)));
+          if (amt !== gPaid(o, grpName)) { let gp = {}; try { gp = JSON.parse(o.groupPaid || '{}'); } catch {} gList(o).forEach(g => { if (gp[g] === undefined) gp[g] = gPaid(o, g); }); gp[grpName] = amt; o.groupPaid = JSON.stringify(gp); o.payNow = gList(o).reduce((a, g) => a + (+gp[g] || 0), 0); }
+        }
+        if (d.fields.status) {
+          let gs = {}; try { gs = JSON.parse(o.groupStatus || '{}'); } catch {} gList(o).forEach(g => { if (!gs[g]) gs[g] = o.status; });
+          const prev = gs[grpName], mine = items.filter(i => i.grp === grpName); gs[grpName] = d.fields.status;
+          if (d.fields.status !== prev) { if (d.fields.status === 'ຍົກເລີກ') stockAdj(mine, 1); else if (prev === 'ຍົກເລີກ') stockAdj(mine, -1); }
+          o.groupStatus = JSON.stringify(gs);
+          const rank = ['ລໍຖ້າຊຳລະ', 'ໃໝ່', 'ຢືນຢັນແລ້ວ', 'ກຳລັງຈັດສົ່ງ', 'ສຳເລັດ'], live = gList(o).map(g => gs[g]).filter(x => x !== 'ຍົກເລີກ');
+          o.status = live.length ? live.reduce((a, b) => rank.indexOf(b) < rank.indexOf(a) ? b : a) : 'ຍົກເລີກ';
+        }
+        s('orders', orders); return { ok: true };
+      }
+      if (d.fields.status && d.fields.status !== o.status) { o.groupStatus = ''; if (d.fields.status === 'ຍົກເລີກ') stockAdj(items, 1); else if (o.status === 'ຍົກເລີກ') stockAdj(items, -1); }
+      if ('payNow' in d.fields && +d.fields.payNow !== +o.payNow) o.groupPaid = '';
       Object.assign(o, d.fields); s('orders', orders); return { ok: true };
     }
     case 'track': {
@@ -1313,15 +1340,15 @@ let A = { settings: {}, products: [], orders: [] }, curTab = 'orders';
 async function login() {
   PW = $('pw').value; const r = await api('adminLogin');
   if (!r.ok) { PW = ''; $('loginErr').textContent = r.error || 'ຜິດພາດ'; return; }
-  ROLE = r.role; try { sessionStorage.setItem('pw', PW); } catch {}
+  ROLE = r.role; GROUP = r.group || ''; try { sessionStorage.setItem('pw', PW); } catch {}
   $('login').classList.add('hide'); $('panel').classList.remove('hide'); await loadAdmin();
 }
 async function loadAdmin() {
   const r = await api('adminData'); if (!r.ok) return toast(r.error);
-  A = r; ROLE = r.role; S = { ...S, ...A.settings }; setTheme(S.themeColor);
-  document.querySelectorAll('.adminTitleTxt').forEach(e => e.textContent = ROLE === 'owner' ? '⚙️ ຈັດການຮ້ານ' : '👷 ພະນັກງານ');
+  A = r; ROLE = r.role; GROUP = r.group || ''; S = { ...S, ...A.settings }; setTheme(S.themeColor);
+  document.querySelectorAll('.adminTitleTxt').forEach(e => e.textContent = ROLE === 'owner' ? '⚙️ ຈັດການຮ້ານ' : GROUP ? '👷 ' + GROUP : '👷 ພະນັກງານ');
   $('adminHeader').classList.add('hide'); $('login').classList.add('hide'); $('sideShop').textContent = S.shopName || '';
-  const allowed = TABS.filter(t => t[2] || ROLE === 'owner');
+  const allowed = TABS.filter(t => GROUP ? ['orders', 'delivery'].includes(t[0]) : (t[2] || ROLE === 'owner')); // ຜູ້ຮັບຜິດຊອບກຸ່ມ: ເຫັນສະເພາະ ອໍເດີ + ຈັດສົ່ງ
   if (!allowed.some(t => t[0] === curTab)) curTab = 'orders';
   $('tabs').innerHTML = allowed.map(t => `<button class="btn btn-ghost justify-start gap-3 w-full" data-t="${t[0]}" onclick="tab('${t[0]}')">${t[1]}${t[0] === 'orders' ? '<span id="newBadge" class="badge badge-error badge-sm text-white ml-auto hide">0</span>' : ''}</button>`).join('');
   tab(curTab); updateBadge();
@@ -1344,7 +1371,7 @@ let OF = { q: '', st: '', g: '' };
 const groupsOfOrder = o => String(o.groups || '').split(',').map(x => x.trim()).filter(Boolean);
 const allGroups = () => [...new Set([...(A.products || []).map(p => p.group), ...A.orders.flatMap(groupsOfOrder)].filter(Boolean))].sort();
 const itemsTextFor = (o, g) => g ? parseItems(o).filter(i => i.grp === g).map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', ') : o.itemsText;
-const groupSelect = (id, cur, fn) => { const gs = allGroups(); return gs.length ? `<select id="${id}" class="fix" style="width:auto" onchange="${fn}"><option value="">ທຸກກຸ່ມ</option>${gs.map(g => `<option ${g === cur ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>` : ''; };
+const groupSelect = (id, cur, fn) => { const gs = allGroups(); return gs.length && !GROUP ? `<select id="${id}" class="fix" style="width:auto" onchange="${fn}"><option value="">ທຸກກຸ່ມ</option>${gs.map(g => `<option ${g === cur ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>` : ''; };
 function renderOrders() {
   if (!$('oList')) {
     $('t-orders').innerHTML = `<div class="row noprint" style="margin-bottom:10px"><input class="input input-bordered w-full" id="oSearch" placeholder="ຊື່ / ເບີ / ເລກອໍເດີ" oninput="OF.q=this.value;fillOrders()">
@@ -1426,7 +1453,7 @@ async function applyReturnDelivery(oid) {
 function updateBadge() {
   const n = A.orders.filter(o => o.status === 'ໃໝ່').length, b = $('newBadge');
   if (b) { b.textContent = n; b.classList.toggle('hide', !n); }
-  document.title = (n ? `(${n}) ` : '') + (ROLE === 'owner' ? 'ຈັດການຮ້ານ' : 'ພະນັກງານ');
+  document.title = (n ? `(${n}) ` : '') + (ROLE === 'owner' ? 'ຈັດການຮ້ານ' : GROUP || 'ພະນັກງານ');
 }
 function beep() { try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .08; o.start(); setTimeout(() => { o.stop(); c.close(); }, 250); } catch {} }
 async function autoRefreshAdmin() {
@@ -1441,15 +1468,18 @@ async function autoRefreshAdmin() {
 }
 function orderCard(x) {
   const id = x.orderId;
+  const ro = GROUP ? ' readonly' : ''; // ຜູ້ຮັບຜິດຊອບກຸ່ມ: ແກ້ໄດ້ສະເພາະສະຖານະ/ໝາຍເຫດ/ກະຕຸກ
+  let gsb = ''; if (!GROUP && x.groupStatus) { try { const m = JSON.parse(x.groupStatus); gsb = Object.keys(m).map(g => `<span class="badge ${sCls(m[g])} badge-sm">${esc(g)}: ${esc(m[g])}</span>`).join(' '); } catch {} }
   return `<div class="ar" id="oc_${id}">
       <div class="line"><b>${esc(id)}</b><span class="muted">${esc(String(x.time).replace('T', ' ').slice(0, 16))}</span></div>
       ${groupsOfOrder(x).length ? `<div class="flex flex-wrap gap-1 mb-1">${groupsOfOrder(x).map(g => `<span class="badge badge-primary badge-outline">${esc(g)}</span>`).join('')}</div>` : ''}
+      ${gsb ? `<div class="flex flex-wrap gap-1 mb-1">${gsb}</div>` : ''}
       ${orderActions(x)}
-      <div class="row"><div><label>ຊື່</label><input class="input input-bordered w-full" id="o_name_${id}" value="${esc(x.name)}"></div><div><label>ເບີໂທ</label><input class="input input-bordered w-full" id="o_phone_${id}" value="${esc(phoneOf(x.phone))}"></div></div>
-      <label>ທີ່ຢູ່</label><textarea class="textarea textarea-bordered w-full" id="o_address_${id}" rows="2">${esc(x.address)}</textarea>
+      <div class="row"><div><label>ຊື່</label><input class="input input-bordered w-full" id="o_name_${id}" value="${esc(x.name)}"${ro}></div><div><label>ເບີໂທ</label><input class="input input-bordered w-full" id="o_phone_${id}" value="${esc(phoneOf(x.phone))}"${ro}></div></div>
+      <label>ທີ່ຢູ່</label><textarea class="textarea textarea-bordered w-full" id="o_address_${id}" rows="2"${ro}>${esc(x.address)}</textarea>
       ${x.custNote ? `<div class="alert alert-info text-sm py-2 my-2">📝 ໝາຍເຫດລູກຄ້າ: ${esc(x.custNote)}</div>` : ''}
       <div class="muted" style="margin:6px 0">${esc(x.itemsText)}</div>
-      <div class="row" style="margin:4px 0"><div><label>🚚 ວັນຈັດສົ່ງ</label><input class="input input-bordered w-full" type="date" id="o_deliveryDate_${id}" value="${esc(dstr(x.deliveryDate))}"></div><div><label>ເວລາ</label><input class="input input-bordered w-full" id="o_deliverySlot_${id}" value="${esc(x.deliverySlot || '')}"></div></div>
+      <div class="row" style="margin:4px 0"><div><label>🚚 ວັນຈັດສົ່ງ</label><input class="input input-bordered w-full" type="date" id="o_deliveryDate_${id}" value="${esc(dstr(x.deliveryDate))}"${ro}></div><div><label>ເວລາ</label><input class="input input-bordered w-full" id="o_deliverySlot_${id}" value="${esc(x.deliverySlot || '')}"${ro}></div></div>
       ${Number(x.repeat) > 0 ? `<div style="color:#1c7a3d">🔁 ສັ່ງປະຈຳທຸກ ${x.repeat} ວັນ</div>` : ''}
       <div class="line"><span>ລວມ ${money(x.total)}</span><span>${esc(x.payMethod)}</span></div>
       ${Number(x.bottleDeposit) ? `<div class="row"><div class="muted">ມັດຈຳກະຕຸກ ${money(x.bottleDeposit)} · ກະຕຸກ ${x.bottleQty || 0} ໜ່ວຍ<br>ຖືຢູ່ <b>${heldOf(x)}</b> ໜ່ວຍ</div>
@@ -1738,7 +1768,7 @@ async function quickColor(c) {
   const r = await api('saveSettings', { settings: { themeColor: c } });
   if (r.ok) { S.themeColor = c; applyTheme(); toast('ປ່ຽນສີແລ້ວ ✓'); } else toast(r.error);
 }
-function adminLogout() { PW = ""; ROLE = ""; try { sessionStorage.removeItem("pw"); } catch {} location.reload(); }
+function adminLogout() { PW = ""; ROLE = ""; GROUP = ""; try { sessionStorage.removeItem("pw"); } catch {} location.reload(); }
 function ownerOff() { OWNER = false; PW = ''; ROLE = ''; try { sessionStorage.removeItem('pw'); } catch {} $('ownerBar').classList.add('hide'); renderGrid(); }
 
 /* ---------- Router ---------- */
@@ -1748,7 +1778,7 @@ async function route() {
   try { if (!PW && MODE !== 'shop') PW = sessionStorage.getItem('pw') || ''; } catch {}
   if (isAdmin) {
     setTheme(S.themeColor);
-    if (PW && $('panel').classList.contains('hide')) { const r = await api('adminLogin'); if (r.ok) { ROLE = r.role; $('login').classList.add('hide'); $('panel').classList.remove('hide'); loadAdmin(); } }
+    if (PW && $('panel').classList.contains('hide')) { const r = await api('adminLogin'); if (r.ok) { ROLE = r.role; GROUP = r.group || ''; $('login').classList.add('hide'); $('panel').classList.remove('hide'); loadAdmin(); } }
   } else {
     OWNER = false;
     if (PW) { const r = await api('adminLogin'); OWNER = !!(r.ok && r.role === 'owner'); }
