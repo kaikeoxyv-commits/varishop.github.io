@@ -613,7 +613,8 @@ function mock(action, d) {
   const gView = (o, gn) => {
     const its = JSON.parse(o.itemsJson || '[]').filter(i => i.grp === gn); let gs = {}; try { gs = JSON.parse(o.groupStatus || '{}'); } catch {}
     const sub = its.reduce((a, i) => a + i.price * i.qty, 0), hd = Number(o.bottleDeposit) > 0, dep = hd ? its.reduce((a, i) => a + (i.deposit || 0) * i.qty, 0) : 0, bq = hd ? its.reduce((a, i) => a + (i.deposit > 0 ? i.qty : 0), 0) : 0, tot = sub + dep;
-    return { ...o, itemsJson: JSON.stringify(its), itemsText: its.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), subtotal: sub, bottleDeposit: dep, bottleQty: bq, total: tot, payNow: gPaid(o, gn), bottleReturned: Math.min(+o.bottleReturned || 0, bq), status: gs[gn] || o.status, overallStatus: o.status, groups: gn, groupStatus: '', slip: '', acct: '' };
+    let gsl = {}; try { gsl = JSON.parse(o.groupSlips || '{}'); } catch {}
+    return { ...o, itemsJson: JSON.stringify(its), itemsText: its.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), subtotal: sub, bottleDeposit: dep, bottleQty: bq, total: tot, payNow: gPaid(o, gn), bottleReturned: Math.min(+o.bottleReturned || 0, bq), status: gs[gn] || o.status, overallStatus: o.status, groups: gn, groupStatus: '', groupSlips: '', slip: gsl[gn] || '', acct: '' };
   };
   if (['adminLogin', 'adminData', 'updateOrder', 'repeatOrder', 'saveProducts', 'saveSettings', 'uploadImage', 'deleteOrder'].includes(action)) {
     if (!role) return { ok: false, error: 'ລະຫັດຜ່ານບໍ່ຖືກ' };
@@ -702,7 +703,11 @@ function mock(action, d) {
       const bottleQty = d.returnBottle ? 0 : items.reduce((a, i) => a + (i.deposit > 0 ? i.qty : 0), 0);
       const bottleDeposit = d.returnBottle ? 0 : items.reduce((a, i) => a + (i.deposit || 0) * i.qty, 0), total = subtotal + bottleDeposit;
       const payNow = d.payMethod === 'qr' ? total : 0, id = newId();
-      orders.push({ orderId: id, time: new Date().toISOString(), name: d.name, phone: d.phone, mapLink: d.mapLink, address: d.address, deliveryDate: d.deliveryDate, deliverySlot: d.deliverySlot, housePhoto: d.housePhoto, itemsText: items.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), itemsJson: JSON.stringify(items), subtotal, delivery: 0, bottleDeposit, total, payType: 'full', payNow, payMethod: d.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', slip: d.slip, status: (d.payMethod === 'qr' && !d.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', note: '', acct: (d.acctPhone && accOk(d.acctPhone, d.token)) ? digits(d.acctPhone) : '', bottleQty, bottleReturned: 0, custNote: d.custNote || '', bottleStatus: bottleQty > 0 ? 'ຖືກະຕຸກ' : '', repeat: [7, 14, 30].includes(+d.repeat) ? +d.repeat : 0, groups: [...new Set(items.map(i => i.grp).filter(Boolean))].sort().join(',') });
+      // ໂອນແຍກບັນຊີຕໍ່ກຸ່ມ (ຈຳລອງ): ສະລິບຕໍ່ກຸ່ມ + ສະຖານະຕໍ່ກຸ່ມ
+      const gl = [...new Set(items.map(i => i.grp).filter(Boolean))].sort(), pg = d.payMethod === 'qr' && d.groupSlips && typeof d.groupSlips === 'object' && gl.length > 0;
+      const gsl = {}, gst = {}; let st0 = (d.payMethod === 'qr' && !d.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', slip0 = d.slip;
+      if (pg) { const rk = ['ລໍຖ້າຊຳລະ', 'ໃໝ່']; gl.forEach(g => { if (d.groupSlips[g]) gsl[g] = d.groupSlips[g]; gst[g] = gsl[g] ? 'ໃໝ່' : 'ລໍຖ້າຊຳລະ'; }); st0 = gl.some(g => gst[g] === 'ລໍຖ້າຊຳລະ') ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່'; slip0 = gsl[gl.find(g => gsl[g])] || ''; }
+      orders.push({ groupStatus: pg ? JSON.stringify(gst) : '', groupSlips: Object.keys(gsl).length ? JSON.stringify(gsl) : '', orderId: id, time: new Date().toISOString(), name: d.name, phone: d.phone, mapLink: d.mapLink, address: d.address, deliveryDate: d.deliveryDate, deliverySlot: d.deliverySlot, housePhoto: d.housePhoto, itemsText: items.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), itemsJson: JSON.stringify(items), subtotal, delivery: 0, bottleDeposit, total, payType: 'full', payNow, payMethod: d.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', slip: slip0, status: st0, note: '', acct: (d.acctPhone && accOk(d.acctPhone, d.token)) ? digits(d.acctPhone) : '', bottleQty, bottleReturned: 0, custNote: d.custNote || '', bottleStatus: bottleQty > 0 ? 'ຖືກະຕຸກ' : '', repeat: [7, 14, 30].includes(+d.repeat) ? +d.repeat : 0, groups: [...new Set(items.map(i => i.grp).filter(Boolean))].sort().join(',') });
       stockAdj(items, -1); s('orders', orders); return { ok: true, orderId: id, total, payNow };
     }
   }
@@ -926,7 +931,9 @@ function openCart() {
 let order = {};
 function openPay() {
   const qrOn = S.payQR !== '0'; // ຕັ້ງຄ່າ: ສະແດງ/ບໍ່ສະແດງ ການໂອນ QR + ບັນຊີ (ບໍ່ສະແດງ = ເກັບເງິນປາຍທາງ ຫຼືແອດມິນທັກສົ່ງບັນຊີໃຫ້)
-  order = { payMethod: qrOn ? 'qr' : 'cod', returnBottle: false, mapLink: '', housePhoto: '', slip: '' };
+  // ໂອນແຍກບັນຊີຕໍ່ກຸ່ມ: ຖ້າສິນຄ້າໃນກະຕ່າມີ "ກຸ່ມຈັດສົ່ງ" ສະແດງຍອດ + QR/ບັນຊີ + ຊ່ອງແນບສະລິບ ແຍກຕໍ່ກຸ່ມ (ກຸ່ມທີ່ບໍ່ໄດ້ຕັ້ງບັນຊີຈະໃຊ້ບັນຊີຫຼັກ)
+  const cg = cartGroupAmounts(), perGroup = cg.some(x => x.g), gb = parseGroupBank(S.groupBank), gq = parseGroupBank(S.groupQR);
+  order = { payMethod: qrOn ? 'qr' : 'cod', returnBottle: false, mapLink: '', housePhoto: '', slip: '', groupSlips: {}, perGroup: qrOn && perGroup };
   const dep = bottleAll() > 0;
   $('payBody').innerHTML = `
     <h2>ຂໍ້ມູນຈັດສົ່ງ & ຈ່າຍເງິນ<button class="btn btn-ghost btn-sm btn-circle text-xl" onclick="closeM('mPay')">×</button></h2>
@@ -954,7 +961,16 @@ function openPay() {
       <label><input class="radio radio-primary radio-sm" type="radio" name="pm" value="cod" ${qrOn ? '' : 'checked'} onchange="setPM(this.value)"> ເກັບເງິນປາຍທາງ</label>
     </div>
     ${S.payNote ? `<div class="muted" style="margin-top:6px;white-space:pre-line">${esc(S.payNote)}</div>` : ''}
-    ${qrOn ? `<div id="qrBox">
+    ${qrOn && perGroup ? `<div id="qrBox">${cg.map((x, i) => `
+      <div class="qr" style="margin-top:10px">
+        ${x.g ? `<div class="font-semibold">${esc(x.g)}</div>` : ''}
+        ${(gq[x.g] || S.qrImage) ? `<img src="${esc(gq[x.g] || S.qrImage)}">` : '<div class="muted">ຍັງບໍ່ໄດ້ຕັ້ງ QR</div>'}
+        ${(gb[x.g] || S.bankInfo) ? `<div style="white-space:pre-line;margin-top:6px">${esc(gb[x.g] || S.bankInfo)}</div>` : ''}
+        <div class="price" style="font-size:20px">ຍອດໂອນ <span class="gAmt" data-i="${i}"></span></div>
+      </div>
+      <label>ແນບສະລິບການໂອນ${x.g ? ' · ' + esc(x.g) : ''}</label>
+      <input class="file-input file-input-bordered w-full" type="file" accept="image/*" onchange="pickG(this,${i},'pvSlipG${i}')"><img id="pvSlipG${i}" class="prev">`).join('')}
+    </div>` : qrOn ? `<div id="qrBox">
       <div class="qr" style="margin-top:10px">
         ${S.qrImage ? `<img src="${esc(S.qrImage)}">` : '<div class="muted">ຍັງບໍ່ໄດ້ຕັ້ງ QR</div>'}
         ${S.bankInfo ? `<div style="white-space:pre-line;margin-top:6px">${esc(S.bankInfo)}</div>` : ''}
@@ -1004,9 +1020,23 @@ function setBottle(v) { order.returnBottle = v; updPayAmt(); }
 function updPayAmt() {
   const sub = subtotal(), bt = bottleDue();
   const pa = $('payAmt'); if (pa) pa.textContent = 'ຍອດໂອນ ' + money(total());
+  const cg = cartGroupAmounts(); document.querySelectorAll('.gAmt').forEach(e => { const x = cg[Number(e.dataset.i)]; if (x) e.textContent = money(x.amt); });
   $('sum').innerHTML = `<div class="line"><span>ລວມສິນຄ້າ</span><span>${money(sub)}</span></div>
     ${bottleAll() ? `<div class="line"><span>ມັດຈຳກະຕຸກ</span><span>${bt ? money(bt) : 'ບໍ່ເສຍ'}</span></div>` : ''}
     <div class="line tot"><span>ລວມທັງໝົດ</span><span>${money(total())}</span></div>`;
+}
+/* ຍອດຕໍ່ກຸ່ມຈັດສົ່ງ ຈາກກະຕ່າ (ລວມມັດຈຳກະຕຸກຂອງສິນຄ້າໃນກຸ່ມນັ້ນ ຖ້າບໍ່ມີກະຕຸກເກົ່າມາແລກ) — ຜົນລວມ = ຍອດລວມຂອງກະຕ່າ */
+function cartGroupAmounts() {
+  const m = {}, keys = [], dep = !(typeof order === 'object' && order && order.returnBottle);
+  cartItems().forEach(x => { const g = x.p.group || ''; if (!(g in m)) { m[g] = 0; keys.push(g); } m[g] += x.u * x.q + (dep ? (Number(x.p.deposit) || 0) * x.q : 0); });
+  return keys.map(g => ({ g, amt: m[g] }));
+}
+async function pickG(inp, i, pv) { // ແນບສະລິບຂອງກຸ່ມທີ i
+  if (!inp.files[0]) return;
+  const x = cartGroupAmounts()[i]; if (!x) return;
+  const img = await readImage(inp.files[0], 1200);
+  if (x.g) order.groupSlips[x.g] = img; else order.slip = img; // ສິນຄ້າທີ່ບໍ່ມີກຸ່ມ ໃຊ້ສະລິບດຽວ (ບັນຊີຫຼັກ)
+  const im = $(pv); im.src = img; im.style.display = 'block';
 }
 async function pick(inp, key, pv) {
   if (!inp.files[0]) return;
@@ -1035,18 +1065,20 @@ async function submitOrder() {
   order.mapLink = $('fMap').value.trim();
   if (order.mapLink && !isMapLink(order.mapLink)) return err('ລິ້ງແຜນທີ່ບໍ່ຖືກ — ໃຊ້ລິ້ງຈາກ Google Maps ຫຼືລົບອອກ');
   if (!order.mapLink && !address) return err('ກະລຸນາສົ່ງຕຳແໜ່ງ (ດຶງ ຫຼື ວາງລິ້ງ) ຫຼື ພິມທີ່ຢູ່');
-  if (order.payMethod === 'qr' && !order.slip && !confirm(tr('ຍັງບໍ່ໄດ້ແນບສະລິບ — ສັ່ງຊື້ຕໍ່ບໍ?'))) return;
+  // ບໍ່ມີສະລິບ: ແບບກຸ່ມ = ມີກຸ່ມໃດກຸ່ມໜຶ່ງຍັງບໍ່ແນບ; ແບບປົກກະຕິ = ຍັງບໍ່ແນບສະລິບດຽວ
+  const noSlip = order.perGroup ? cartGroupAmounts().some(x => x.g ? !order.groupSlips[x.g] : !order.slip) : !order.slip;
+  if (order.payMethod === 'qr' && noSlip && !confirm(tr('ຍັງບໍ່ໄດ້ແນບສະລິບ — ສັ່ງຊື້ຕໍ່ບໍ?'))) return;
   const b = $('submitBtn'); b.disabled = true; b.textContent = 'ກຳລັງສົ່ງ...'; err('');
   try {
     const ci = cartItems(), items = ci.map(x => ({ id: x.p.id, qty: x.q, opt: x.opt }));
     const snap = { sub: subtotal(), bt: bottleDue() }, lines = ci.map(x => ({ name: pName(x.p), unit: x.p.unit, price: x.u, qty: x.q, opt: x.opt }));
     const acct = loadJSON('acct', null);
-    const r = await api('order', { ...order, name, phone, address, items, deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value, repeat: 0, custNote: $('fNote').value.trim(), hp: $('fHp').value, acctPhone: acct && acct.phone, token: acct && acct.token });
+    const r = await api('order', { ...order, groupSlips: order.perGroup ? order.groupSlips : undefined, name, phone, address, items, deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value, repeat: 0, custNote: $('fNote').value.trim(), hp: $('fHp').value, acctPhone: acct && acct.phone, token: acct && acct.token });
     if (!r.ok) throw new Error(r.error);
     saveJSON('cust', { name, phone, address, mapLink: order.mapLink }); saveJSON('lastOrder', items); saveJSON('lastTrack', { orderId: r.orderId, phone });
     if (acct) api('saveProfile', { phone: acct.phone, token: acct.token, name, address, mapLink: order.mapLink }).then(x => { if (x.ok) saveJSON('acct', { ...acct, name, address, mapLink: order.mapLink }); });
     $('reorder').classList.remove('hide');
-    const inv = { mapLink: order.mapLink, custNote: $('fNote').value.trim(), orderId: r.orderId, time: new Date().toISOString(), status: (order.payMethod === 'qr' && !order.slip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', name, phone, address, itemsJson: JSON.stringify(lines), subtotal: snap.sub, bottleDeposit: snap.bt, total: r.total, payNow: r.payNow, payMethod: order.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value };
+    const inv = { mapLink: order.mapLink, custNote: $('fNote').value.trim(), orderId: r.orderId, time: new Date().toISOString(), status: (order.payMethod === 'qr' && noSlip) ? 'ລໍຖ້າຊຳລະ' : 'ໃໝ່', name, phone, address, itemsJson: JSON.stringify(lines), subtotal: snap.sub, bottleDeposit: snap.bt, total: r.total, payNow: r.payNow, payMethod: order.payMethod === 'qr' ? 'ໂອນ QR' : 'ເກັບເງິນປາຍທາງ', deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value };
     window._lastInv = inv; rememberBill(inv, phone);
     cart = {}; saveCart();
     $('payBody').innerHTML = `<div style="text-align:center;padding:20px 0"><div style="font-size:54px">✅</div>
@@ -1392,13 +1424,20 @@ function fillOrders() {
 }
 /* ປຸ່ມຂັ້ນຕອນດ່ວນໃນບັດອໍເດີ: ຢືນຢັນຮັບອໍເດີ → ເລີ່ມຈັດສົ່ງ → ສົ່ງແລ້ວ (ກົດເທື່ອດຽວ ບັນທຶກທັນທີ ແລະລູກຄ້າເຫັນໃນ 🧾) */
 const NEXT_STEP = { 'ລໍຖ້າຊຳລະ': ['ຢືນຢັນແລ້ວ', '✔ ຢືນຢັນຮັບອໍເດີ'], 'ໃໝ່': ['ຢືນຢັນແລ້ວ', '✔ ຢືນຢັນຮັບອໍເດີ'], 'ຢືນຢັນແລ້ວ': ['ກຳລັງຈັດສົ່ງ', '🚚 ເລີ່ມຈັດສົ່ງ'], 'ກຳລັງຈັດສົ່ງ': ['ສຳເລັດ', '✔ ສົ່ງແລ້ວ (ສຳເລັດ)'] };
+const parseGroupBank = s => { const out = {}; String(s || '').split('\n').forEach(l => { const m = l.match(/^\s*(.+?)\s*[=:]\s*(.+)$/); if (m) out[m[1]] = m[2].trim(); }); return out; };
+const gAmt = (o, g) => { const hd = Number(o.bottleDeposit) > 0; return parseItems(o).filter(i => i.grp === g).reduce((a, i) => a + i.price * i.qty + (hd ? (i.deposit || 0) * i.qty : 0), 0); };
+const gPaidOf = (o, g) => { let gp = {}; try { gp = JSON.parse(o.groupPaid || '{}'); } catch {} if (gp[g] !== undefined) return Number(gp[g]) || 0; const t = Number(o.total) || 0; return t > 0 ? Math.round((Number(o.payNow) || 0) * gAmt(o, g) / t) : 0; };
 function customerMsg(o) { // ຂໍ້ຄວາມແຈ້ງລູກຄ້າທາງ WhatsApp ຕາມສະຖານະ
   const head = `ສະບາຍດີ ${o.name} 🙏\n`, items = parseItems(o).map(i => `• ${i.name}${i.opt ? ' (' + i.opt + ')' : ''} × ${i.qty}`).join('\n');
   const when = `🚚 ຈັດສົ່ງ: ${dstr(o.deliveryDate)} ${o.deliverySlot || ''}`.trim(), foot = `\nຂອບໃຈທີ່ອຸດໜູນ ${S.shopName || ''}`;
   if (o.status === 'ກຳລັງຈັດສົ່ງ') return `${head}ອໍເດີ ${o.orderId} ກຳລັງຈັດສົ່ງໄປຫາທ່ານ 🚚\n${items}\nຍອດລວມ: ${money(o.total)}${foot}`;
   if (o.status === 'ສຳເລັດ') return `${head}ອໍເດີ ${o.orderId} ຈັດສົ່ງສຳເລັດແລ້ວ ✅${foot}`;
   // ຖ້າປິດການໂອນ QR ໃນໜ້າສັ່ງຊື້ ແລະຍັງບໍ່ຈ່າຍ: ແນບເລກບັນຊີໃຫ້ລູກຄ້າໃນຂໍ້ຄວາມຢືນຢັນ (ສຳລັບລູກຄ້າທີ່ຢາກໂອນ)
-  const bank = S.payQR === '0' && S.bankInfo && Number(o.payNow) < Number(o.total) ? `\n💳 ຖ້າຕ້ອງການໂອນ: ${String(S.bankInfo).replace(/\n+/g, ' · ')}` : '';
+  // ບັນຊີແຍກຕໍ່ກຸ່ມ (ຕັ້ງຄ່າ → "ບັນຊີຮັບເງິນຕໍ່ກຸ່ມ"): ແຕ່ລະກຸ່ມແນບສະເພາະຍອດຄ້າງ ແລະບັນຊີຂອງກຸ່ມຕົນ
+  const gb = parseGroupBank(S.groupBank), gl = [];
+  String(o.groups || '').split(',').filter(Boolean).forEach(g => { const rem = gAmt(o, g) - gPaidOf(o, g); if (gb[g] && rem > 0) gl.push(`💳 ຍອດ${g} ${money(rem)} — ໂອນໄດ້ທີ່: ${gb[g]}`); });
+  const bank = gl.length ? '\n' + gl.join('\n')
+    : (S.payQR === '0' && S.bankInfo && Number(o.payNow) < Number(o.total) ? `\n💳 ຖ້າຕ້ອງການໂອນ: ${String(S.bankInfo).replace(/\n+/g, ' · ')}` : '');
   return `${head}ຮ້ານ ${S.shopName || ''} ໄດ້ຮັບອໍເດີ ${o.orderId} ຂອງທ່ານແລ້ວ ✅\n${items}\nຍອດລວມ: ${money(o.total)}\n${when}${bank}${foot}`;
 }
 function orderActions(x) {
@@ -1474,6 +1513,7 @@ async function autoRefreshAdmin() {
 }
 function orderCard(x) {
   const id = x.orderId;
+  let gslips = ''; if (x.groupSlips) { try { const m = JSON.parse(x.groupSlips); gslips = Object.keys(m).filter(g => /^(https?:\/\/|data:image\/)/.test(m[g])).map(g => `<a class="btn btn-ghost bg-base-200 btn-sm" target="_blank" rel="noopener" href="${esc(m[g])}">🧾 ສະລິບ ${esc(g)}</a>`).join(''); } catch {} } // ສະລິບແຍກຕໍ່ກຸ່ມ
   const ro = GROUP ? ' readonly' : ''; // ຜູ້ຮັບຜິດຊອບກຸ່ມ: ແກ້ໄດ້ສະເພາະສະຖານະ/ໝາຍເຫດ/ກະຕຸກ
   let gsb = ''; if (!GROUP && x.groupStatus) { try { const m = JSON.parse(x.groupStatus); gsb = Object.keys(m).map(g => `<span class="badge ${sCls(m[g])} badge-sm">${esc(g)}: ${esc(m[g])}</span>`).join(' '); } catch {} }
   return `<div class="ar" id="oc_${id}">
@@ -1497,7 +1537,8 @@ function orderCard(x) {
       <div class="row" style="margin-top:8px;flex-wrap:wrap">
         ${/^https?:\/\//.test(x.mapLink || '') ? `<a class="btn btn-ghost bg-base-200 btn-sm" target="_blank" rel="noopener" href="${esc(x.mapLink)}">📍 ແຜນທີ່</a>` : ''}
         ${/^https?:\/\//.test(x.housePhoto || '') || /^data:image\//.test(x.housePhoto || '') ? `<a class="btn btn-ghost bg-base-200 btn-sm" target="_blank" rel="noopener" href="${esc(x.housePhoto)}">🏠 ຮູບບ້ານ</a>` : ''}
-        ${/^https?:\/\//.test(x.slip || '') || /^data:image\//.test(x.slip || '') ? `<a class="btn btn-ghost bg-base-200 btn-sm" target="_blank" rel="noopener" href="${esc(x.slip)}">🧾 ສະລິບ</a>` : ''}
+        ${!x.groupSlips && (/^https?:\/\//.test(x.slip || '') || /^data:image\//.test(x.slip || '')) ? `<a class="btn btn-ghost bg-base-200 btn-sm" target="_blank" rel="noopener" href="${esc(x.slip)}">🧾 ສະລິບ</a>` : ''}
+        ${gslips}
         <button class="btn btn-ghost bg-base-200 btn-sm" onclick="showInvoice(A.orders.find(o => o.orderId === '${id}'))">🖨 ໃບສັ່ງຊື້</button>
         ${ROLE === 'owner' && !GROUP && x.status === 'ຍົກເລີກ' ? `<button class="btn btn-error btn-outline btn-sm" onclick="deleteOrderUI('${id}')">🗑 ລົບອໍເດີ</button>` : ''}
         <button class="btn btn-primary btn-sm" onclick="saveOrder('${id}')">💾 ບັນທຶກ</button>
@@ -1699,6 +1740,9 @@ function renderSettings() {
     <select class="select select-bordered w-full" id="s_payQR"><option value="1" ${s.payQR !== '0' ? 'selected' : ''}>ສະແດງ (ລູກຄ້າໂອນ QR + ແນບສະລິບ ຫຼືເກັບເງິນປາຍທາງ)</option><option value="0" ${s.payQR === '0' ? 'selected' : ''}>ບໍ່ສະແດງ (ມີແຕ່ເກັບເງິນປາຍທາງ; ແອດມິນທັກສົ່ງບັນຊີໃຫ້ລູກຄ້າເອງ)</option></select>
     <label>ຂໍ້ຄວາມແຈ້ງການຈ່າຍເງິນ (ບໍ່ບັງຄັບ) — ສະແດງໃຕ້ "ວິທີຈ່າຍເງິນ" ໃນໜ້າສັ່ງຊື້</label>
     <textarea class="textarea textarea-bordered w-full" id="s_payNote" rows="2" placeholder="ເຊັ່ນ ຖ້າຕ້ອງການໂອນ ແອດມິນຈະທັກສົ່ງເລກບັນຊີໃຫ້ທາງ WhatsApp">${esc(s.payNote || '')}</textarea>
+    <label>ບັນຊີຮັບເງິນຕໍ່ກຸ່ມ — ແຖວລະ 1 ກຸ່ມ ຮູບແບບ: <code>ຊື່ກຸ່ມ = ຊື່ບັນຊີ / ເລກບັນຊີ</code> (ຂຽນໃນແຖວດຽວ; ຊື່ກຸ່ມຕ້ອງຕົງກັບ "ກຸ່ມຈັດສົ່ງ" ໃນສິນຄ້າ). ສະແດງໃຫ້ລູກຄ້າຕອນໂອນ (ແຍກຕໍ່ກຸ່ມ) ແລະໃຊ້ໃນຂໍ້ຄວາມ WhatsApp ທີ່ແອດມິນກົດ "ແຈ້ງລູກຄ້າ"</label>
+    <textarea class="textarea textarea-bordered w-full" id="s_groupBank" rows="3" placeholder="ນ້ຳແພັກ = ຊື່ບັນຊີ: ... ເລກບັນຊີ: ...&#10;ນ້ຳຕຸກໃຫຍ່ = ຊື່ບັນຊີ: ... ເລກບັນຊີ: ...">${esc(s.groupBank || '')}</textarea>
+    ${allGroups().length ? `<label>ຮູບ QR ຮັບເງິນ ແຍກຕໍ່ກຸ່ມ (ກຸ່ມທີ່ບໍ່ອັບໂຫຼດ ຈະໃຊ້ QR ຫຼັກດ້ານລຸ່ມ)</label>` + allGroups().map((g, i) => { const u = parseGroupBank(s.groupQR)[g]; return `<div class="flex items-center gap-3 mt-1"><span class="font-medium" style="min-width:6rem">${esc(g)}</span><input class="file-input file-input-bordered file-input-sm flex-1 min-w-0" type="file" accept="image/*" onchange="upGroupQR(this,${i})">${u ? `<img src="${esc(u)}" class="h-16 rounded bg-base-200">` : '<span class="muted">ຍັງບໍ່ມີ QR</span>'}</div>`; }).join('') : ''}
     <label>ຂໍ້ຄວາມບັນຊີ (ຊື່ທະນາຄານ / ເລກບັນຊີ) — ເວັ້ນວ່າງໄດ້</label><textarea class="textarea textarea-bordered w-full" id="s_bankInfo" rows="2">${esc(s.bankInfo)}</textarea>
     <label>ອັບໂຫຼດຮູບ QR ໃໝ່</label><input class="file-input file-input-bordered w-full" type="file" accept="image/*" onchange="upQR(this)">
     <div class="qr" style="margin-top:8px">${s.qrImage ? `<img id="qrPrev" src="${esc(s.qrImage)}">` : '<span class="muted">ຍັງບໍ່ມີ QR</span>'}</div>
@@ -1708,6 +1752,13 @@ function renderSettings() {
     <div class="qr" style="margin-top:8px"><img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}"><div class="muted">QR ຂອງລິ້ງຮ້ານ (ກົດຄ້າງເພື່ອບັນທຶກ)</div></div></div>
   <button class="btn btn-primary btn-block" onclick="saveSet()">💾 ບັນທຶກການຕັ້ງຄ່າ</button>
   <p class="muted">ເຂົ້າໜ້ານີ້: ກົດໂລໂກ້ 5 ເທື່ອໄວໆ ຫຼືຕໍ່ທ້າຍລິ້ງດ້ວຍ #admin. ລະຫັດພະນັກງານ ຕັ້ງໃນ Apps Script → Script properties → STAFF_PASSWORDS (ເບິ່ງ README).</p>`;
+}
+async function upGroupQR(inp, i) { // ອັບໂຫຼດ QR ຂອງກຸ່ມທີ i ແລ້ວເກັບເປັນແຖວ "ກຸ່ມ = ລິ້ງ"
+  const g = allGroups()[i]; if (!inp.files[0] || !g) return; toast('ກຳລັງອັບໂຫຼດ...');
+  const r = await api('uploadImage', { data: await readImage(inp.files[0], 900) });
+  if (!r.ok || !r.url) return toast(r.error || 'ອັບໂຫຼດບໍ່ສຳເລັດ');
+  const m = parseGroupBank(A.settings.groupQR); m[g] = r.url;
+  A.settings.groupQR = Object.keys(m).map(k => `${k} = ${m[k]}`).join('\n'); collectSet(); renderSettings(); toast('ອັບໂຫຼດແລ້ວ — ກົດບັນທຶກ');
 }
 async function upQR(inp) {
   if (!inp.files[0]) return; toast('ກຳລັງອັບໂຫຼດ...');
@@ -1738,7 +1789,7 @@ async function upLogo(inp) {
   collectSet(); renderSettings(); toast('ເລືອກໂລໂກ້ແລ້ວ — ກົດບັນທຶກ');
 }
 function resetLogo() { A.settings.logo = ''; collectSet(); renderSettings(); toast('ກົດບັນທຶກເພື່ອໃຊ້ໂລໂກ້ເດີມ'); }
-const SET_KEYS = ['payQR', 'payNote', 'shopName', 'tagline', 'contact', 'phone', 'whatsapp', 'notice', 'themeColor', 'currency', 'minOrder', 'lowStock', 'bankInfo', 'slots', 'notifyEmail', 'groupEmails', 'i18nExtra'];
+const SET_KEYS = ['payQR', 'payNote', 'groupBank', 'shopName', 'tagline', 'contact', 'phone', 'whatsapp', 'notice', 'themeColor', 'currency', 'minOrder', 'lowStock', 'bankInfo', 'slots', 'notifyEmail', 'groupEmails', 'i18nExtra'];
 function collectSet() { SET_KEYS.forEach(k => { const e = $('s_' + k); if (e) A.settings[k] = e.value; }); }
 async function saveSet() { collectSet(); const r = await api('saveSettings', { settings: A.settings }); toast(r.ok ? 'ບັນທຶກແລ້ວ ✓' : r.error); if (r.ok) { S = { ...A.settings }; applyTheme(); } }
 
