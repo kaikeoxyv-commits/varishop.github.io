@@ -926,7 +926,8 @@ function openCart() {
 /* ---------- ຈ່າຍເງິນ / ຂໍ້ມູນລູກຄ້າ ---------- */
 let order = {};
 function openPay() {
-  order = { payMethod: 'qr', returnBottle: false, mapLink: '', housePhoto: '', slip: '' };
+  const qrOn = S.payQR !== '0'; // ຕັ້ງຄ່າ: ສະແດງ/ບໍ່ສະແດງ ການໂອນ QR + ບັນຊີ (ບໍ່ສະແດງ = ເກັບເງິນປາຍທາງ ຫຼືແອດມິນທັກສົ່ງບັນຊີໃຫ້)
+  order = { payMethod: qrOn ? 'qr' : 'cod', returnBottle: false, mapLink: '', housePhoto: '', slip: '' };
   const dep = bottleAll() > 0;
   $('payBody').innerHTML = `
     <h2>ຂໍ້ມູນຈັດສົ່ງ & ຈ່າຍເງິນ<button class="btn btn-ghost btn-sm btn-circle text-xl" onclick="closeM('mPay')">×</button></h2>
@@ -942,9 +943,6 @@ function openPay() {
     <img id="pvHouse" class="prev">
     <label>ວັນ-ເວລາຈັດສົ່ງ *</label>
     <div class="row"><input class="input input-bordered w-full" type="date" id="fDate"><select class="select select-bordered w-full" id="fSlot">${String(S.slots || '').split(',').map(x => x.trim()).filter(Boolean).map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
-    <label>ສັ່ງປະຈຳ (ບໍ່ຕ້ອງສັ່ງໃໝ່ທຸກຄັ້ງ)</label>
-    <select class="select select-bordered w-full" id="fRepeat"><option value="0">ບໍ່ — ສັ່ງເທື່ອນີ້ເທື່ອດຽວ</option><option value="7">ສົ່ງທຸກ 7 ວັນ</option><option value="14">ສົ່ງທຸກ 14 ວັນ</option><option value="30">ສົ່ງທຸກ 30 ວັນ</option></select>
-    <div class="muted" style="margin-top:4px">ຮ້ານຈະຕິດຕໍ່ຢືນຢັນ ແລະສ້າງອໍເດີຮອບຕໍ່ໄປໃຫ້</div>
     <label>ໝາຍເຫດເຖິງຮ້ານ (ບໍ່ບັງຄັບ)</label><textarea class="textarea textarea-bordered w-full" id="fNote" rows="2" maxlength="300" placeholder="ເຊັ່ນ ວາງໄວ້ໜ້າປະຕູ, ໂທກ່ອນມາ"></textarea>
     <input id="fHp" style="position:absolute;left:-9999px;width:1px" tabindex="-1" autocomplete="off" aria-hidden="true">
     ${dep ? `<label>ກະຕຸກນ້ຳ</label><div class="opt" style="flex-direction:column">
@@ -953,18 +951,19 @@ function openPay() {
       <div class="muted" style="margin-top:4px">ມັດຈຳກະຕຸກຄືນໃຫ້ເມື່ອລູກຄ້າສົ່ງກະຕຸກຄືນຮ້ານ</div>` : ''}
     <label>ວິທີຈ່າຍເງິນ</label>
     <div class="opt">
-      <label><input class="radio radio-primary radio-sm" type="radio" name="pm" value="qr" checked onchange="setPM(this.value)"> ໂອນ QR</label>
-      <label><input class="radio radio-primary radio-sm" type="radio" name="pm" value="cod" onchange="setPM(this.value)"> ເກັບເງິນປາຍທາງ</label>
+      ${qrOn ? `<label><input class="radio radio-primary radio-sm" type="radio" name="pm" value="qr" checked onchange="setPM(this.value)"> ໂອນ QR</label>` : ''}
+      <label><input class="radio radio-primary radio-sm" type="radio" name="pm" value="cod" ${qrOn ? '' : 'checked'} onchange="setPM(this.value)"> ເກັບເງິນປາຍທາງ</label>
     </div>
-    <div id="qrBox">
+    ${S.payNote ? `<div class="muted" style="margin-top:6px;white-space:pre-line">${esc(S.payNote)}</div>` : ''}
+    ${qrOn ? `<div id="qrBox">
       <div class="qr" style="margin-top:10px">
         ${S.qrImage ? `<img src="${esc(S.qrImage)}">` : '<div class="muted">ຍັງບໍ່ໄດ້ຕັ້ງ QR</div>'}
-        <div style="white-space:pre-line;margin-top:6px">${esc(S.bankInfo)}</div>
+        ${S.bankInfo ? `<div style="white-space:pre-line;margin-top:6px">${esc(S.bankInfo)}</div>` : ''}
         <div class="price" style="font-size:20px" id="payAmt"></div>
       </div>
       <label>ແນບສະລິບການໂອນ</label>
       <input class="file-input file-input-bordered w-full" type="file" accept="image/*" onchange="pick(this,'slip','pvSlip')"><img id="pvSlip" class="prev">
-    </div>
+    </div>` : ''}
     <div id="sum" style="margin-top:10px"></div>
     <div class="err" id="payErr"></div>
     <button class="btn btn-primary btn-block" id="submitBtn" style="margin-top:10px" onclick="submitOrder()">ຢືນຢັນສັ່ງຊື້</button>`;
@@ -1001,11 +1000,11 @@ function confirmMap() {
   const ll = MARK.getLatLng();
   $('fMap').value = `https://www.google.com/maps?q=${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}`; mapInput(); closeM('mMap');
 }
-function setPM(v) { order.payMethod = v; $('qrBox').classList.toggle('hide', v !== 'qr'); }
+function setPM(v) { order.payMethod = v; const b = $('qrBox'); if (b) b.classList.toggle('hide', v !== 'qr'); }
 function setBottle(v) { order.returnBottle = v; updPayAmt(); }
 function updPayAmt() {
   const sub = subtotal(), bt = bottleDue();
-  $('payAmt').textContent = 'ຍອດໂອນ ' + money(total());
+  const pa = $('payAmt'); if (pa) pa.textContent = 'ຍອດໂອນ ' + money(total());
   $('sum').innerHTML = `<div class="line"><span>ລວມສິນຄ້າ</span><span>${money(sub)}</span></div>
     ${bottleAll() ? `<div class="line"><span>ມັດຈຳກະຕຸກ</span><span>${bt ? money(bt) : 'ບໍ່ເສຍ'}</span></div>` : ''}
     <div class="line tot"><span>ລວມທັງໝົດ</span><span>${money(total())}</span></div>`;
@@ -1043,7 +1042,7 @@ async function submitOrder() {
     const ci = cartItems(), items = ci.map(x => ({ id: x.p.id, qty: x.q, opt: x.opt }));
     const snap = { sub: subtotal(), bt: bottleDue() }, lines = ci.map(x => ({ name: pName(x.p), unit: x.p.unit, price: x.u, qty: x.q, opt: x.opt }));
     const acct = loadJSON('acct', null);
-    const r = await api('order', { ...order, name, phone, address, items, deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value, repeat: $('fRepeat').value, custNote: $('fNote').value.trim(), hp: $('fHp').value, acctPhone: acct && acct.phone, token: acct && acct.token });
+    const r = await api('order', { ...order, name, phone, address, items, deliveryDate: $('fDate').value, deliverySlot: $('fSlot').value, repeat: 0, custNote: $('fNote').value.trim(), hp: $('fHp').value, acctPhone: acct && acct.phone, token: acct && acct.token });
     if (!r.ok) throw new Error(r.error);
     saveJSON('cust', { name, phone, address, mapLink: order.mapLink }); saveJSON('lastOrder', items); saveJSON('lastTrack', { orderId: r.orderId, phone });
     if (acct) api('saveProfile', { phone: acct.phone, token: acct.token, name, address, mapLink: order.mapLink }).then(x => { if (x.ok) saveJSON('acct', { ...acct, name, address, mapLink: order.mapLink }); });
@@ -1399,7 +1398,9 @@ function customerMsg(o) { // ຂໍ້ຄວາມແຈ້ງລູກຄ້າ
   const when = `🚚 ຈັດສົ່ງ: ${dstr(o.deliveryDate)} ${o.deliverySlot || ''}`.trim(), foot = `\nຂອບໃຈທີ່ອຸດໜູນ ${S.shopName || ''}`;
   if (o.status === 'ກຳລັງຈັດສົ່ງ') return `${head}ອໍເດີ ${o.orderId} ກຳລັງຈັດສົ່ງໄປຫາທ່ານ 🚚\n${items}\nຍອດລວມ: ${money(o.total)}${foot}`;
   if (o.status === 'ສຳເລັດ') return `${head}ອໍເດີ ${o.orderId} ຈັດສົ່ງສຳເລັດແລ້ວ ✅${foot}`;
-  return `${head}ຮ້ານ ${S.shopName || ''} ໄດ້ຮັບອໍເດີ ${o.orderId} ຂອງທ່ານແລ້ວ ✅\n${items}\nຍອດລວມ: ${money(o.total)}\n${when}${foot}`;
+  // ຖ້າປິດການໂອນ QR ໃນໜ້າສັ່ງຊື້ ແລະຍັງບໍ່ຈ່າຍ: ແນບເລກບັນຊີໃຫ້ລູກຄ້າໃນຂໍ້ຄວາມຢືນຢັນ (ສຳລັບລູກຄ້າທີ່ຢາກໂອນ)
+  const bank = S.payQR === '0' && S.bankInfo && Number(o.payNow) < Number(o.total) ? `\n💳 ຖ້າຕ້ອງການໂອນ: ${String(S.bankInfo).replace(/\n+/g, ' · ')}` : '';
+  return `${head}ຮ້ານ ${S.shopName || ''} ໄດ້ຮັບອໍເດີ ${o.orderId} ຂອງທ່ານແລ້ວ ✅\n${items}\nຍອດລວມ: ${money(o.total)}\n${when}${bank}${foot}`;
 }
 function orderActions(x) {
   const nx = NEXT_STEP[x.status], id = x.orderId;
@@ -1695,7 +1696,11 @@ function renderSettings() {
     <textarea class="textarea textarea-bordered w-full mt-2" id="s_i18nExtra" rows="4" placeholder="ຮ້ານນ້ຳດື່ມ ວາຣີ | ร้านน้ำดื่มวารี | Vari Drinking Water">${esc(s.i18nExtra)}</textarea>
   </div>
   <div class="ar"><b>ຄິວອາ ຮັບເງິນ</b>
-    <label>ຂໍ້ຄວາມບັນຊີ (ຊື່ທະນາຄານ / ເລກບັນຊີ)</label><textarea class="textarea textarea-bordered w-full" id="s_bankInfo" rows="2">${esc(s.bankInfo)}</textarea>
+    <label>ສະແດງ "ໂອນ QR + ບັນຊີ" ໃຫ້ລູກຄ້າຕອນສັ່ງຊື້</label>
+    <select class="select select-bordered w-full" id="s_payQR"><option value="1" ${s.payQR !== '0' ? 'selected' : ''}>ສະແດງ (ລູກຄ້າໂອນ QR + ແນບສະລິບ ຫຼືເກັບເງິນປາຍທາງ)</option><option value="0" ${s.payQR === '0' ? 'selected' : ''}>ບໍ່ສະແດງ (ມີແຕ່ເກັບເງິນປາຍທາງ; ແອດມິນທັກສົ່ງບັນຊີໃຫ້ລູກຄ້າເອງ)</option></select>
+    <label>ຂໍ້ຄວາມແຈ້ງການຈ່າຍເງິນ (ບໍ່ບັງຄັບ) — ສະແດງໃຕ້ "ວິທີຈ່າຍເງິນ" ໃນໜ້າສັ່ງຊື້</label>
+    <textarea class="textarea textarea-bordered w-full" id="s_payNote" rows="2" placeholder="ເຊັ່ນ ຖ້າຕ້ອງການໂອນ ແອດມິນຈະທັກສົ່ງເລກບັນຊີໃຫ້ທາງ WhatsApp">${esc(s.payNote || '')}</textarea>
+    <label>ຂໍ້ຄວາມບັນຊີ (ຊື່ທະນາຄານ / ເລກບັນຊີ) — ເວັ້ນວ່າງໄດ້</label><textarea class="textarea textarea-bordered w-full" id="s_bankInfo" rows="2">${esc(s.bankInfo)}</textarea>
     <label>ອັບໂຫຼດຮູບ QR ໃໝ່</label><input class="file-input file-input-bordered w-full" type="file" accept="image/*" onchange="upQR(this)">
     <div class="qr" style="margin-top:8px">${s.qrImage ? `<img id="qrPrev" src="${esc(s.qrImage)}">` : '<span class="muted">ຍັງບໍ່ມີ QR</span>'}</div>
   </div>
@@ -1734,7 +1739,7 @@ async function upLogo(inp) {
   collectSet(); renderSettings(); toast('ເລືອກໂລໂກ້ແລ້ວ — ກົດບັນທຶກ');
 }
 function resetLogo() { A.settings.logo = ''; collectSet(); renderSettings(); toast('ກົດບັນທຶກເພື່ອໃຊ້ໂລໂກ້ເດີມ'); }
-const SET_KEYS = ['shopName', 'tagline', 'contact', 'phone', 'whatsapp', 'notice', 'themeColor', 'currency', 'minOrder', 'lowStock', 'bankInfo', 'slots', 'notifyEmail', 'groupEmails', 'i18nExtra'];
+const SET_KEYS = ['payQR', 'payNote', 'shopName', 'tagline', 'contact', 'phone', 'whatsapp', 'notice', 'themeColor', 'currency', 'minOrder', 'lowStock', 'bankInfo', 'slots', 'notifyEmail', 'groupEmails', 'i18nExtra'];
 function collectSet() { SET_KEYS.forEach(k => { const e = $('s_' + k); if (e) A.settings[k] = e.value; }); }
 async function saveSet() { collectSet(); const r = await api('saveSettings', { settings: A.settings }); toast(r.ok ? 'ບັນທຶກແລ້ວ ✓' : r.error); if (r.ok) { S = { ...A.settings }; applyTheme(); } }
 
