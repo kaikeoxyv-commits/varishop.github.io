@@ -217,6 +217,7 @@ body.pi>*:not(#invPrint){display:none!important}body.pi #invPrint{display:block!
         <div id="t-report" class="hide"></div>
         <div id="t-products" class="hide"></div>
         <div id="t-settings" class="hide"></div>
+        <div id="t-stock" class="hide"></div>
       </div>
     </main>
   </div>
@@ -552,7 +553,7 @@ const IC = {
   'globe': '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
   'heart': '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
 };
-const EMOJI_ICON = { '📍': 'map-pin', '🧾': 'receipt', '🚚': 'truck', '📞': 'phone', '💾': 'save', '🔁': 'repeat', '🔎': 'search', '🔍': 'search', '🖨': 'printer', '⚙': 'settings', '👤': 'user', '👥': 'users', '🛒': 'cart', '✅': 'check-circle', '⏳': 'hourglass', '💰': 'coins', '⬇': 'download', '🛍': 'bag', '💬': 'message', '📦': 'package', '🫙': 'bottle', '📷': 'camera', '🎨': 'palette', '🏠': 'home', '📝': 'file', '📄': 'file', '📊': 'chart', '⏰': 'clock', '✔': 'check', '↻': 'refresh', '📋': 'clipboard', '⚠': 'alert', '👷': 'hard-hat', '✏': 'pencil', '🗺': 'map', '🙏': 'heart', '📲': 'smartphone', '🌐': 'globe' };
+const EMOJI_ICON = { '🗂': 'package', '📍': 'map-pin', '🧾': 'receipt', '🚚': 'truck', '📞': 'phone', '💾': 'save', '🔁': 'repeat', '🔎': 'search', '🔍': 'search', '🖨': 'printer', '⚙': 'settings', '👤': 'user', '👥': 'users', '🛒': 'cart', '✅': 'check-circle', '⏳': 'hourglass', '💰': 'coins', '⬇': 'download', '🛍': 'bag', '💬': 'message', '📦': 'package', '🫙': 'bottle', '📷': 'camera', '🎨': 'palette', '🏠': 'home', '📝': 'file', '📄': 'file', '📊': 'chart', '⏰': 'clock', '✔': 'check', '↻': 'refresh', '📋': 'clipboard', '⚠': 'alert', '👷': 'hard-hat', '✏': 'pencil', '🗺': 'map', '🙏': 'heart', '📲': 'smartphone', '🌐': 'globe' };
 const svgIcon = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
 const EMO_RE = new RegExp('(' + Object.keys(EMOJI_ICON).join('|') + ')\\uFE0F?', 'g');
 function iconifyText(t) {
@@ -616,7 +617,7 @@ function mock(action, d) {
     let gsl = {}; try { gsl = JSON.parse(o.groupSlips || '{}'); } catch {}
     return { ...o, itemsJson: JSON.stringify(its), itemsText: its.map(i => i.name + (i.opt ? ' (' + i.opt + ')' : '') + ' x' + i.qty).join(', '), subtotal: sub, bottleDeposit: dep, bottleQty: bq, total: tot, payNow: gPaid(o, gn), bottleReturned: Math.min(+o.bottleReturned || 0, bq), status: gs[gn] || o.status, overallStatus: o.status, groups: gn, groupStatus: '', groupSlips: '', slip: gsl[gn] || '', acct: '' };
   };
-  if (['adminLogin', 'adminData', 'updateOrder', 'repeatOrder', 'saveProducts', 'saveSettings', 'uploadImage', 'deleteOrder'].includes(action)) {
+  if (['adminLogin', 'adminData', 'updateOrder', 'repeatOrder', 'saveProducts', 'saveSettings', 'uploadImage', 'deleteOrder', 'setStock'].includes(action)) {
     if (!role) return { ok: false, error: 'ລະຫັດຜ່ານບໍ່ຖືກ' };
     if (['saveProducts', 'saveSettings', 'uploadImage', 'deleteOrder'].includes(action) && role !== 'owner') return { ok: false, error: 'ສະເພາະເຈົ້າຂອງຮ້ານ' };
   }
@@ -649,10 +650,17 @@ function mock(action, d) {
     }
     case 'config': return { ok: true, settings, products: products.filter(p => p.active && p.stock > 0) };
     case 'adminLogin': return { ok: true, role, group: grpName };
-    case 'adminData': return { ok: true, role, group: grpName, settings, products: role === 'owner' ? products : [], orders: (grpName ? orders.filter(o => gList(o).includes(grpName)).map(o => gView(o, grpName)) : [...orders]).reverse() };
+    case 'adminData': return { ok: true, role, group: grpName, settings, products: role === 'owner' ? products : grpName ? products.filter(p => p.group === grpName).map(p => ({ id: p.id, name: p.name, unit: p.unit, image: p.image, stock: p.stock, active: p.active, group: p.group })) : [], orders: (grpName ? orders.filter(o => gList(o).includes(grpName)).map(o => gView(o, grpName)) : [...orders]).reverse() };
     case 'saveProducts': s('products', d.products); return { ok: true };
     case 'saveSettings': s('settings', { ...settings, ...d.settings }); return { ok: true };
     case 'uploadImage': return { ok: true, url: d.data };
+    case 'setStock': {
+      if (role !== 'owner' && !grpName) return { ok: false, error: 'ສະເພາະເຈົ້າຂອງ ຫຼືຜູ້ຮັບຜິດຊອບກຸ່ມ' };
+      const v = Math.floor(Number(d.stock)); if (d.stock === '' || d.stock == null || !isFinite(v) || v < 0 || v > 99999) return { ok: false, error: 'ຈຳນວນສະຕັອກບໍ່ຖືກ (ໃສ່ 0 - 99999)' };
+      const p = products.find(x => x.id === d.id); if (!p) return { ok: false, error: 'ບໍ່ພົບສິນຄ້າ' };
+      if (grpName && p.group !== grpName) return { ok: false, error: 'ສິນຄ້ານີ້ບໍ່ແມ່ນຂອງກຸ່ມຂອງທ່ານ' };
+      p.stock = v; s('products', products); return { ok: true, stock: v };
+    }
     case 'deleteOrder': {
       const i = orders.findIndex(x => x.orderId === d.orderId); if (i < 0) return { ok: false, error: 'ບໍ່ພົບອໍເດີ' };
       if (orders[i].status !== 'ຍົກເລີກ') return { ok: false, error: 'ຕ້ອງຍົກເລີກອໍເດີກ່ອນ ຈຶ່ງລົບໄດ້ (ເພື່ອຄືນສະຕັອກ)' };
@@ -1371,7 +1379,7 @@ function accLogout() { delete memLS.acct; try { localStorage.removeItem('acct');
 
 /* ---------- ADMIN ---------- */
 const COLORS = ['#1bbccf', '#57c6d6', '#1a73e8', '#2e9e5b', '#e8590c', '#d6336c', '#7048e8', '#c92a2a', '#343a40'];
-const TABS = [['orders', '📦 ອໍເດີ', 1], ['delivery', '🚚 ຈັດສົ່ງ', 1], ['repeat', '🔁 ປະຈຳ', 1], ['customers', '👥 ລູກຄ້າ', 1], ['report', '📊 ລາຍງານ', 0], ['products', '🛍 ສິນຄ້າ', 0], ['settings', '🎨 ຕັ້ງຄ່າ', 0]];
+const TABS = [['orders', '📦 ອໍເດີ', 1], ['delivery', '🚚 ຈັດສົ່ງ', 1], ['repeat', '🔁 ປະຈຳ', 1], ['customers', '👥 ລູກຄ້າ', 1], ['report', '📊 ລາຍງານ', 0], ['products', '🛍 ສິນຄ້າ', 0], ['settings', '🎨 ຕັ້ງຄ່າ', 0], ['stock', '🗂 ສະຕັອກ', 0]];
 let A = { settings: {}, products: [], orders: [] }, curTab = 'orders';
 async function login() {
   PW = $('pw').value; const r = await api('adminLogin');
@@ -1384,9 +1392,11 @@ async function loadAdmin() {
   A = r; ROLE = r.role; GROUP = r.group || ''; S = { ...S, ...A.settings }; setTheme(S.themeColor);
   document.querySelectorAll('.adminTitleTxt').forEach(e => e.textContent = ROLE === 'owner' ? '⚙️ ຈັດການຮ້ານ' : GROUP ? '👷 ' + GROUP : '👷 ພະນັກງານ');
   $('adminHeader').classList.add('hide'); $('login').classList.add('hide'); $('sideShop').textContent = S.shopName || '';
-  const allowed = TABS.filter(t => GROUP ? ['orders', 'delivery'].includes(t[0]) : (t[2] || ROLE === 'owner')); // ຜູ້ຮັບຜິດຊອບກຸ່ມ: ເຫັນສະເພາະ ອໍເດີ + ຈັດສົ່ງ
+  // ຜູ້ຮັບຜິດຊອບກຸ່ມ: ອໍເດີ, ຈັດສົ່ງ, ສະຫຼຸບ (ລາຍງານຂອງກຸ່ມຕົນ), ສະຕັອກ (ສິນຄ້າຂອງກຸ່ມຕົນ); ແຖບ "ສະຕັອກ" ມີສະເພາະກຸ່ມ (ເຈົ້າຂອງແກ້ໃນ "ສິນຄ້າ")
+  const allowed = TABS.filter(t => GROUP ? ['orders', 'delivery', 'report', 'stock'].includes(t[0]) : t[0] === 'stock' ? false : (t[2] || ROLE === 'owner'));
+  const tabLabel = t => GROUP && t[0] === 'report' ? '📊 ສະຫຼຸບ' : t[1];
   if (!allowed.some(t => t[0] === curTab)) curTab = 'orders';
-  $('tabs').innerHTML = allowed.map(t => `<button class="btn btn-ghost justify-start gap-3 w-full" data-t="${t[0]}" onclick="tab('${t[0]}')">${t[1]}${t[0] === 'orders' ? '<span id="newBadge" class="badge badge-error badge-sm text-white ml-auto hide">0</span>' : ''}</button>`).join('');
+  $('tabs').innerHTML = allowed.map(t => `<button class="btn btn-ghost justify-start gap-3 w-full" data-t="${t[0]}" onclick="tab('${t[0]}')">${tabLabel(t)}${t[0] === 'orders' ? '<span id="newBadge" class="badge badge-error badge-sm text-white ml-auto hide">0</span>' : ''}</button>`).join('');
   tab(curTab); updateBadge();
   if (!window._adminTimer) window._adminTimer = setInterval(autoRefreshAdmin, 60000);
 }
@@ -1394,9 +1404,9 @@ function toggleSide(open) { $('sidebar').classList.toggle('-translate-x-full', !
 function tab(t) {
   curTab = t;
   document.querySelectorAll('#tabs button').forEach(b => b.className = 'btn justify-start gap-3 w-full ' + (b.dataset.t === t ? 'btn-primary' : 'btn-ghost'));
-  if ($('curTabName')) $('curTabName').textContent = (TABS.find(x => x[0] === t) || [])[1] || ''; toggleSide(false);
+  if ($('curTabName')) $('curTabName').textContent = (GROUP && t === 'report' ? '📊 ສະຫຼຸບ' : (TABS.find(x => x[0] === t) || [])[1]) || ''; toggleSide(false);
   TABS.forEach(x => $('t-' + x[0]).classList.toggle('hide', x[0] !== t));
-  ({ orders: renderOrders, delivery: renderDelivery, repeat: renderRepeat, customers: renderCustomers, report: renderReport, products: renderProducts, settings: renderSettings })[t]();
+  ({ orders: renderOrders, delivery: renderDelivery, repeat: renderRepeat, customers: renderCustomers, report: renderReport, products: renderProducts, settings: renderSettings, stock: renderStock })[t]();
 }
 const validOrders = () => A.orders.filter(o => o.status !== 'ຍົກເລີກ');
 const parseItems = o => { try { return JSON.parse(o.itemsJson || '[]'); } catch { return []; } };
@@ -1666,6 +1676,26 @@ function exportReport() {
   const mon = {}, prod = {};
   validOrders().forEach(o => { const k = ymd(new Date(o.time)).slice(0, 7), m = mon[k] || (mon[k] = { n: 0, sum: 0 }); m.n++; m.sum += saleOf(o); parseItems(o).forEach(i => { const p = prod[i.name] || (prod[i.name] = { qty: 0, sum: 0 }); p.qty += i.qty; p.sum += i.price * i.qty; }); });
   downloadCSV('report-' + ymd(new Date()) + '.csv', [['ເດືອນ', 'ຈຳນວນອໍເດີ', 'ຍອດຂາຍ'], ...Object.keys(mon).sort().map(k => [k, mon[k].n, mon[k].sum]), [], ['ສິນຄ້າ', 'ຈຳນວນ', 'ຍອດຂາຍ'], ...Object.entries(prod).map(([n, p]) => [n, p.qty, p.sum])]);
+}
+
+/* --- ສະຕັອກ (ຜູ້ຮັບຜິດຊອບກຸ່ມ: ແກ້ສະເພາະຈຳນວນສິນຄ້າຂອງກຸ່ມຕົນ) --- */
+function renderStock() {
+  const low = Number(S.lowStock) || 10;
+  $('t-stock').innerHTML = `<p class="muted">ແກ້ຈຳນວນສະຕັອກຂອງສິນຄ້າກຸ່ມ <b>${esc(GROUP)}</b>. ໃສ່ຈຳນວນຄົງເຫຼືອຈິງ ຫຼືກົດ +10 / +50 / +100 ເມື່ອມີເຄື່ອງເຂົ້າ ແລ້ວກົດ ບັນທຶກ. ລະບົບຕັດສະຕັອກເອງເມື່ອມີອໍເດີ. (9999 = ບໍ່ຈຳກັດ)</p>` +
+    (A.products.length ? A.products.map((p, i) => {
+      const s = Number(p.stock), unl = s >= 9999, tag = !p.active ? '<span class="badge badge-ghost">ປິດຢູ່</span>' : s <= 0 ? '<span class="badge badge-error text-white">ໝົດ</span>' : (!unl && s <= low) ? '<span class="badge badge-warning">ໃກ້ໝົດ</span>' : '';
+      return `<div class="ar"><div class="row">
+        <div class="fix">${p.image ? `<img src="${esc(p.image)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px">` : '<div style="width:56px;height:56px;background:#e9eff1;border-radius:10px"></div>'}</div>
+        <div><b>${esc(p.name)}</b> ${tag}<div class="muted">ຄົງເຫຼືອປັດຈຸບັນ: <b>${unl ? 'ບໍ່ຈຳກັດ' : s}</b> ${esc(p.unit)}</div></div></div>
+        <div class="row" style="margin-top:8px;flex-wrap:wrap"><input class="input input-bordered" type="number" min="0" max="99999" id="st_${i}" value="${s}" style="min-width:7rem">
+          ${[10, 50, 100].map(n => `<button class="btn btn-ghost bg-base-200 btn-sm fix" type="button" onclick="stockAdd(${i},${n})">+${n}</button>`).join('')}
+          <button class="btn btn-primary btn-sm fix" type="button" onclick="saveStock(${i})">💾 ບັນທຶກ</button></div></div>`;
+    }).join('') : '<p class="muted">ບໍ່ມີສິນຄ້າໃນກຸ່ມນີ້ (ເຈົ້າຂອງຕ້ອງໃສ່ "ກຸ່ມຈັດສົ່ງ" ໃຫ້ສິນຄ້າ)</p>');
+}
+function stockAdd(i, n) { const e = $('st_' + i); e.value = (Number(e.value) || 0) + n; }
+async function saveStock(i) {
+  const p = A.products[i], r = await api('setStock', { id: p.id, stock: $('st_' + i).value });
+  if (!r.ok) return toast(r.error); p.stock = r.stock; toast('ບັນທຶກສະຕັອກແລ້ວ ✓'); renderStock();
 }
 
 /* --- ສິນຄ້າ (ເຈົ້າຂອງ) --- */
