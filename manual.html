@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e8fa3">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>ຄູ່ມືໃຊ້ງານ ວາຣີ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&family=Noto+Sans+Lao+Looped:wght@500;700&display=swap">
+<style>
+/* ຄູ່ມືລະບົບສັ່ງຊື້ນ້ຳດື່ມ ວາຣີ: ອ່ານງ່າຍ ແຍກສີຕາມບົດບາດ (ລູກຄ້າ / ເຈົ້າຂອງ / ພະນັກງານ / ຜູ້ຮັບຜິດຊອບກຸ່ມ) */
+:root{
+  --bg:#f4f8f9; --card:#ffffff; --fg:#14313a; --mute:#566d75; --line:#d7e3e7;
+  --brand:#0e8fa3; --brand-soft:#dff3f6;
+  --c-cust:#0e8fa3; --c-own:#2f3f8f; --c-staff:#5b6b73; --c-grp:#c2570a;
+  --soft-cust:#dff3f6; --soft-own:#e4e8fa; --soft-staff:#e8edef; --soft-grp:#fdebd9;
+  --ok:#1b7f4b; --ok-soft:#dcf3e6; --no:#a3362e; --no-soft:#f9e2df; --warn-soft:#fff2cc;
+  --shadow:0 1px 2px rgba(20,49,58,.06),0 6px 18px rgba(20,49,58,.06);
+  --font:'Noto Sans Lao','Noto Sans Lao Looped','Leelawadee UI','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1d22; --card:#14292f; --fg:#e6f1f3; --mute:#9bb3ba; --line:#27434b;
+  --brand:#3fc3d6; --brand-soft:#14383f;
+  --c-cust:#3fc3d6; --c-own:#9db0ff; --c-staff:#b4c3c9; --c-grp:#ffab63;
+  --soft-cust:#123a41; --soft-own:#1e2750; --soft-staff:#22373d; --soft-grp:#43290f;
+  --ok:#5fd596; --ok-soft:#123b27; --no:#ff8a80; --no-soft:#46201d; --warn-soft:#44390f;
+  --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1d22; --card:#14292f; --fg:#e6f1f3; --mute:#9bb3ba; --line:#27434b;
+  --brand:#3fc3d6; --brand-soft:#14383f;
+  --c-cust:#3fc3d6; --c-own:#9db0ff; --c-staff:#b4c3c9; --c-grp:#ffab63;
+  --soft-cust:#123a41; --soft-own:#1e2750; --soft-staff:#22373d; --soft-grp:#43290f;
+  --ok:#5fd596; --ok-soft:#123b27; --no:#ff8a80; --no-soft:#46201d; --warn-soft:#44390f;
+  --shadow:none; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.75;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px}
+.wrap{max-width:980px;margin:0 auto}
+h1,h2,h3{line-height:1.35;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,5vw,40px);font-weight:700}
+h2{font-size:clamp(22px,3.5vw,28px);font-weight:700}
+h3{font-size:18px;font-weight:600}
+p{margin:.4em 0}
+a{color:var(--brand)}
+code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;background:var(--soft-staff);padding:.1em .45em;border-radius:6px;word-break:break-all}
+
+/* ຫົວໜ້າ */
+.hero{padding:40px 0 26px}
+.eyebrow{font-size:13px;letter-spacing:.08em;color:var(--brand);font-weight:600}
+.hero p.lead{font-size:18px;color:var(--mute);max-width:62ch}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:22px}
+.link{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.link b{display:block;font-size:14px;color:var(--mute);font-weight:600}
+.link .url{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.link .url span{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;word-break:break-all;flex:1;min-width:0}
+button{font:inherit;cursor:pointer}
+.copy{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:4px 12px;font-size:13px}
+.copy:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.link.admin{border-color:var(--c-own)}
+
+/* ເມນູດ່ວນ */
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:10px 0;margin-bottom:6px;border-bottom:1px solid var(--line)}
+nav.toc ul{list-style:none;margin:0;padding:0;display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin}
+nav.toc a{display:block;white-space:nowrap;text-decoration:none;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:14px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+
+section{padding:34px 0 8px;scroll-margin-top:60px}
+section>p.sub{color:var(--mute);margin-top:6px}
+
+/* ປ້າຍບົດບາດ */
+.role{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:2px 12px;border-radius:999px;white-space:nowrap}
+.role.cust{background:var(--soft-cust);color:var(--c-cust)}
+.role.own{background:var(--soft-own);color:var(--c-own)}
+.role.staff{background:var(--soft-staff);color:var(--c-staff)}
+.role.grp{background:var(--soft-grp);color:var(--c-grp)}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:18px}
+.rolecard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;border-top:5px solid var(--line);box-shadow:var(--shadow)}
+.rolecard.cust{border-top-color:var(--c-cust)} .rolecard.own{border-top-color:var(--c-own)}
+.rolecard.staff{border-top-color:var(--c-staff)} .rolecard.grp{border-top-color:var(--c-grp)}
+.rolecard p{color:var(--mute);font-size:14.5px;margin:6px 0 0}
+.rolecard .how{margin-top:10px;font-size:14px}
+
+/* ຕາຕະລາງສິດ */
+.tablebox{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--line);font-size:14.5px}
+th{background:var(--bg);font-size:13.5px;position:sticky;top:0}
+th:first-child,td:first-child{text-align:left;min-width:190px}
+tr:last-child td{border-bottom:0}
+.y{color:var(--ok);font-weight:700} .n{color:var(--no);font-weight:700} .p{color:var(--c-grp);font-weight:600;font-size:13px}
+td .y,td .n{font-size:17px}
+.note{font-size:13px;color:var(--mute)}
+
+/* ຂັ້ນຕອນ */
+.steps{counter-reset:s;list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}
+.steps li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 56px;position:relative;box-shadow:var(--shadow)}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:12px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;background:var(--sc,var(--brand))}
+.steps.cust{--sc:var(--c-cust)} .steps.own{--sc:var(--c-own)} .steps.grp{--sc:var(--c-grp)}
+.steps small{display:block;color:var(--mute);font-size:13.5px;margin-top:2px}
+.btn{display:inline-block;font-size:13px;font-weight:600;border-radius:8px;padding:1px 10px;border:1px solid transparent;white-space:nowrap}
+.btn.green{background:#1d9d5f;color:#fff} .btn.teal{background:#0e8fa3;color:#fff}
+.btn.line{border-color:#0e8fa3;color:#0e8fa3;background:transparent} .btn.red{border-color:#c0392b;color:#c0392b}
+.btn.wa{background:#25a65b;color:#fff}
+
+/* ໂທລະສັບຈຳລອງ */
+.phones{display:flex;gap:16px;flex-wrap:wrap;margin-top:18px;align-items:flex-start}
+.phonebox{flex:1 1 150px;min-width:150px;max-width:210px;text-align:center}
+.phone{border:2px solid var(--fg);border-radius:22px;background:var(--card);padding:0;overflow:hidden;aspect-ratio:9/16;display:flex;flex-direction:column;position:relative}
+.phone .top{background:var(--brand);height:32px;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700}
+.phone .body{flex:1;padding:8px;display:flex;flex-direction:column;gap:6px;font-size:11px;text-align:left}
+.phone .bar{height:9px;border-radius:5px;background:var(--line)}
+.phone .bar.s{width:60%} .phone .bar.m{width:80%}
+.phone .tile{border:1px solid var(--line);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px}
+.phone .imgbox{height:34px;border-radius:6px;background:var(--brand-soft)}
+.phone .pbtn{background:var(--brand);color:#fff;border-radius:6px;text-align:center;font-weight:600;padding:3px;font-size:10.5px}
+.phone .pbtn.o{background:transparent;border:1px solid var(--brand);color:var(--brand)}
+.phone .field{border:1px solid var(--line);border-radius:6px;padding:3px 6px;color:var(--mute);font-size:10.5px}
+.phone .nav{margin-top:auto;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:5px 0;font-size:10px;color:var(--mute)}
+.phone .cart{background:var(--brand);color:#fff;border-radius:8px;padding:5px 8px;display:flex;justify-content:space-between;font-weight:600;font-size:10.5px}
+.phonebox figcaption{margin-top:8px;font-size:13.5px;color:var(--mute);line-height:1.5}
+.phonebox figcaption b{color:var(--fg)}
+.num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--sc,var(--brand));color:#fff;font-size:12px;font-weight:700;flex:none}
+
+/* ບັດອໍເດີແອດມິນ */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-top:18px;align-items:start}
+@media (max-width:760px){.split{grid-template-columns:minmax(0,1fr)}}
+.mock{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);position:relative;font-size:13.5px;min-width:0}
+.mock .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mock .mid{font-weight:700;font-size:14px}
+.mock .tag{border:1px solid var(--c-own);color:var(--c-own);border-radius:999px;padding:0 9px;font-size:12px}
+.mock .big{flex:1 1 150px;background:#1d9d5f;color:#fff;text-align:center;border-radius:10px;padding:8px;font-weight:700}
+.mock .ghost{border:1px solid #0e8fa3;color:#0e8fa3;border-radius:10px;padding:7px 12px;font-weight:600}
+.mock .in{border:1px solid var(--line);border-radius:8px;padding:5px 9px;color:var(--mute);background:var(--bg);flex:1 1 120px}
+.mock .in.ro{opacity:.7}
+.mock .tot{display:flex;justify-content:space-between;margin:8px 0;font-weight:600}
+.mock .save{background:#0e8fa3;color:#fff;border-radius:8px;padding:6px 12px;font-weight:600}
+.mock .mk{position:absolute;right:-8px;margin-top:-4px}
+.mock .lbl{font-size:12px;color:var(--mute);margin-top:6px}
+.legend{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.legend li{display:flex;gap:10px;align-items:flex-start;--sc:var(--c-grp)}
+.legend p{margin:0}
+.legend small{display:block;color:var(--mute)}
+
+/* ແຜນຜັງ ຂັ້ນຕອນຂອງອໍເດີ */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px;counter-reset:f}
+.fstep{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow);position:relative;display:flex;flex-direction:column;gap:6px}
+.fstep::before{counter-increment:f;content:counter(f);position:absolute;top:-10px;left:12px;background:var(--fg);color:var(--bg);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+.fstep b{font-size:15px}
+.fstep p{font-size:13.5px;color:var(--mute);margin:0}
+.fstep .role{align-self:flex-start;margin-top:auto}
+
+/* ສະຖານະ */
+.stat{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.pill{padding:3px 14px;border-radius:999px;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--card)}
+.pill.w{background:var(--warn-soft)} .pill.i{background:var(--soft-cust);color:var(--c-cust)} .pill.s{background:var(--soft-grp);color:var(--c-grp)} .pill.d{background:var(--ok-soft);color:var(--ok)} .pill.x{background:var(--no-soft);color:var(--no)}
+.arrow{color:var(--mute)}
+.lanes{margin-top:16px;display:grid;gap:8px}
+.lane{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+@media (max-width:520px){.lane{grid-template-columns:minmax(0,1fr)}}
+.lane .who{font-weight:600;font-size:14.5px}
+.lane.total{background:var(--brand-soft);border-color:var(--brand)}
+
+/* ແຈ້ງເຕືອນ / ຕາຕະລາງຂໍ້ມູນ */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.card h3{font-size:16.5px;margin-bottom:4px}
+.card ul{margin:6px 0 0;padding-left:20px;color:var(--mute);font-size:14.5px}
+.callout{border-radius:12px;padding:12px 16px;margin-top:16px;border:1px solid var(--line);background:var(--warn-soft)}
+.callout.ok{background:var(--ok-soft)}
+.callout b{display:block}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:10px}
+.faq summary{cursor:pointer;font-weight:600}
+.faq details[open] summary{margin-bottom:6px}
+.foot{margin-top:40px;color:var(--mute);font-size:13.5px;border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">ຄູ່ມືໃຊ້ງານ · ນ້ຳດື່ມ ວາຣີ</div>
+    <h1>ໃຜໃຊ້ຫຍັງ ແລະໃຊ້ແນວໃດ</h1>
+    <p class="lead">ລະບົບສັ່ງຊື້ນ້ຳດື່ມອອນລາຍ ມີ 2 ໜ້າ: ໜ້າສຳລັບລູກຄ້າສັ່ງຊື້ ແລະໜ້າແອດມິນສຳລັບຮ້ານ. ໜ້າແອດມິນແຍກສິດຕາມບົດບາດ ຕົວແທນນ້ຳແພັກ ແລະສຳນັກງານນ້ຳຕຸກໃຫຍ່ເຫັນ ແລະຮັບສະເພາະອໍເດີຂອງຝ່າຍຕົນ.</p>
+    <div class="links">
+      <div class="link"><b>ລິ້ງລູກຄ້າ (ສົ່ງໃຫ້ລູກຄ້າສັ່ງຊື້)</b>
+        <div class="url"><span id="u1">https://vari-water.github.io/</span><button class="copy" data-t="u1" type="button">ຄັດລອກ</button></div></div>
+      <div class="link admin"><b>ລິ້ງແອດມິນ (ສະເພາະຝ່າຍຮ້ານ ຢ່າສົ່ງໃຫ້ລູກຄ້າ)</b>
+        <div class="url"><span id="u2">https://vari-water.github.io/admin.html</span><button class="copy" data-t="u2" type="button">ຄັດລອກ</button></div></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="ສາລະບານ"><ul>
+    <li><a href="#who">ໃຜເປັນໃຜ</a></li>
+    <li><a href="#flow">ຂັ້ນຕອນຂອງອໍເດີ</a></li>
+    <li><a href="#perm">ໃຜເຮັດຫຍັງໄດ້</a></li>
+    <li><a href="#cust">ລູກຄ້າ</a></li>
+    <li><a href="#grp">ຜູ້ຮັບຜິດຊອບກຸ່ມ</a></li>
+    <li><a href="#own">ເຈົ້າຂອງ</a></li>
+    <li><a href="#status">ສະຖານະ</a></li>
+    <li><a href="#notify">ແຈ້ງເຕືອນ</a></li>
+    <li><a href="#faq">ແກ້ບັນຫາ</a></li>
+  </ul></nav>
+
+  <section id="who">
+    <h2>ໃຜເປັນໃຜ</h2>
+    <p class="sub">ແຕ່ລະຄົນໃຊ້ລິ້ງ ແລະລະຫັດຂອງຕົນເອງ. ສີຂອງປ້າຍບົດບາດນີ້ໃຊ້ເປັນຕົວຊີ້ທົ່ວຄູ່ມື.</p>
+    <div class="roles">
+      <div class="rolecard cust"><span class="role cust">ລູກຄ້າ</span>
+        <p>ສັ່ງຊື້ ແລະຕິດຕາມບິນຂອງຕົນເອງ ບໍ່ຕ້ອງມີລະຫັດ.</p><p class="how">ໃຊ້: ລິ້ງລູກຄ້າ</p></div>
+      <div class="rolecard own"><span class="role own">ເຈົ້າຂອງຮ້ານ</span>
+        <p>ເຫັນ ແລະແກ້ໄດ້ທຸກຢ່າງ: ສິນຄ້າ ລາຄາ ຕັ້ງຄ່າ ລາຍງານ ລົບອໍເດີ.</p><p class="how">ໃຊ້: ລິ້ງແອດມິນ + ລະຫັດເຈົ້າຂອງ</p></div>
+      <div class="rolecard staff"><span class="role staff">ພະນັກງານທົ່ວໄປ</span>
+        <p>ຜູ້ຊ່ວຍທີ່ຕ້ອງເຫັນອໍເດີ<b>ທຸກກຸ່ມ</b> (ເຊັ່ນ ຄົນຮັບໂທລະສັບ). ແກ້ຊື່-ທີ່ຢູ່ ແລະຮັບເງິນໄດ້ ແຕ່ແກ້ສິນຄ້າ ຕັ້ງຄ່າ ລາຍງານບໍ່ໄດ້. <i>ບໍ່ຈຳເປັນຖ້າບໍ່ມີຜູ້ຊ່ວຍ.</i></p><p class="how">ໃຊ້: ລິ້ງແອດມິນ + ລະຫັດພະນັກງານ (<code>STAFF_PASSWORDS</code> ຄົນລະລະຫັດ)</p></div>
+      <div class="rolecard grp"><span class="role grp">ຜູ້ຮັບຜິດຊອບກຸ່ມ</span>
+        <p>ຕົວແທນ <b>ນ້ຳແພັກ</b> ແລະສຳນັກງານ <b>ນ້ຳຕຸກໃຫຍ່</b> ເຫັນ ແລະຮັບສະເພາະອໍເດີຂອງຝ່າຍຕົນ.</p><p class="how">ໃຊ້: ລິ້ງແອດມິນ + ລະຫັດຂອງກຸ່ມ</p></div>
+    </div>
+  </section>
+
+  <section id="flow">
+    <h2>ຂັ້ນຕອນຂອງອໍເດີ ຕັ້ງແຕ່ສັ່ງຈົນຮັບເງິນ</h2>
+    <p class="sub">ຕົວຢ່າງ: ລູກຄ້າສັ່ງນ້ຳແພັກ ແລະນ້ຳ 18,9 ລິດ ໃນອໍເດີດຽວ. ແຕ່ລະຝ່າຍເຮັດສ່ວນຂອງຕົນ.</p>
+    <div class="flow">
+      <div class="fstep"><b>ລູກຄ້າສັ່ງ</b><p>ເລືອກສິນຄ້າ ໃສ່ຕຳແໜ່ງ ເລືອກວັນ-ເວລາ ແລະເກັບເງິນປາຍທາງ.</p><span class="role cust">ລູກຄ້າ</span></div>
+      <div class="fstep"><b>ແຈ້ງເຕືອນເຂົ້າ</b><p>ອີເມວເຈົ້າຂອງ (ທຸກລາຍການ). Telegram ແຕ່ລະກຸ່ມ (ສະເພາະສິນຄ້າຂອງກຸ່ມ).</p><span class="role staff">ອັດຕະໂນມັດ</span></div>
+      <div class="fstep"><b>ຢືນຢັນຮັບ</b><p>ແຕ່ລະຝ່າຍກົດ "ຢືນຢັນຮັບອໍເດີ" ສ່ວນຂອງຕົນ.</p><span class="role grp">ກຸ່ມ</span></div>
+      <div class="fstep"><b>ແຈ້ງລູກຄ້າ</b><p>ກົດ "ແຈ້ງລູກຄ້າ" ເປີດ WhatsApp ພ້ອມຍອດ + ບັນຊີຂອງຝ່າຍນັ້ນ.</p><span class="role grp">ກຸ່ມ</span></div>
+      <div class="fstep"><b>ຈັດສົ່ງ</b><p>"ເລີ່ມຈັດສົ່ງ" ແລ້ວ "ສົ່ງແລ້ວ" (ຫຼືໃນແຖບ ຈັດສົ່ງ).</p><span class="role grp">ກຸ່ມ</span></div>
+      <div class="fstep"><b>ຮັບເງິນ</b><p>ໄດ້ເງິນ/ໂອນແລ້ວ ກົດ "ຮັບເງິນແລ້ວ" ສ່ວນຂອງຝ່າຍຕົນ.</p><span class="role grp">ກຸ່ມ</span></div>
+      <div class="fstep"><b>ເຈົ້າຂອງກວດ</b><p>ເບິ່ງລາຍງານ ຍອດຄ້າງ ກະຕຸກຄ້າງ ແລະຍົກເລີກ/ລົບອໍເດີທົດສອບ.</p><span class="role own">ເຈົ້າຂອງ</span></div>
+    </div>
+  </section>
+
+  <section id="perm">
+    <h2>ໃຜເຮັດຫຍັງໄດ້</h2>
+    <p class="sub">✓ ເຮັດໄດ້ · ✗ ເຮັດບໍ່ໄດ້. ລະບົບຫຼັງບ້ານກັນສິດຈິງ ບໍ່ແມ່ນແຕ່ເຊື່ອງປຸ່ມ.</p>
+    <div class="tablebox"><table>
+      <thead><tr><th>ການເຮັດວຽກ</th><th><span class="role cust">ລູກຄ້າ</span></th><th><span class="role own">ເຈົ້າຂອງ</span></th><th><span class="role staff">ພະນັກງານ</span></th><th><span class="role grp">ກຸ່ມ</span></th></tr></thead>
+      <tbody>
+        <tr><td>ສັ່ງຊື້ ແລະຕິດຕາມບິນ</td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><td>ເບິ່ງອໍເດີ</td><td><span class="p">ຂອງຕົນ</span></td><td class="y">ທັງໝົດ</td><td class="y">ທັງໝົດ</td><td><span class="p">ສະເພາະກຸ່ມ</span></td></tr>
+        <tr><td>ຢືນຢັນ / ຈັດສົ່ງ / ສຳເລັດ</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td><span class="y">✓</span> <span class="p">ສ່ວນຂອງກຸ່ມ</span></td></tr>
+        <tr><td>ບັນທຶກຮັບເງິນ (ຈ່າຍແລ້ວ)</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td><span class="y">✓</span> <span class="p">ສ່ວນຂອງກຸ່ມ</span></td></tr>
+        <tr><td>ສົ່ງ WhatsApp ແຈ້ງລູກຄ້າ</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td><span class="y">✓</span> <span class="p">ຍອດ+ບັນຊີກຸ່ມ</span></td></tr>
+        <tr><td>ໃບຈັດສົ່ງປະຈຳວັນ</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td><span class="y">✓</span> <span class="p">ສະເພາະກຸ່ມ</span></td></tr>
+        <tr><td>ຍົກເລີກອໍເດີ</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td><span class="y">✓</span> <span class="p">ສ່ວນຂອງກຸ່ມ</span></td></tr>
+        <tr><td>ແກ້ຊື່ / ເບີ / ທີ່ຢູ່ / ວັນສົ່ງ</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>ຮັບກະຕຸກຄືນ (ມັດຈຳ)</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>ລູກຄ້າ & ກະຕຸກ, ອໍເດີປະຈຳ</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>ສະຫຼຸບຍອດຂາຍ / ລາຍງານ</td><td class="n">✗</td><td class="y">ທັງໝົດ</td><td class="n">✗</td><td><span class="y">✓</span> <span class="p">ສະເພາະກຸ່ມ</span></td></tr>
+        <tr><td>ແກ້ສະຕັອກ (ຈຳນວນຄົງເຫຼືອ)</td><td class="n">✗</td><td class="y">ທຸກສິນຄ້າ</td><td class="n">✗</td><td><span class="y">✓</span> <span class="p">ສິນຄ້າຂອງກຸ່ມ</span></td></tr>
+        <tr><td>ເພີ່ມສິນຄ້າ / ແກ້ລາຄາ / ກຸ່ມ</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td></tr>
+        <tr><td>ຕັ້ງຄ່າ (ຊື່ຮ້ານ, ໂລໂກ້, ບັນຊີ, ອີເມວ)</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td></tr>
+        <tr><td>ລົບອໍເດີທີ່ຍົກເລີກແລ້ວ</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td></tr>
+      </tbody></table></div>
+    <p class="note" style="margin-top:8px">ຢ່າໃຊ້ລະຫັດຊ້ຳກັນລະຫວ່າງບົດບາດ: ລະບົບໃຫ້ສິດຕາມລະຫັດທີ່ພິມ ຖ້າໃຫ້ຕົວແທນໃຊ້ລະຫັດເຈົ້າຂອງ ເຂົາຈະກາຍເປັນເຈົ້າຂອງ. ຜູ້ຮັບຜິດຊອບກຸ່ມບໍ່ເຫັນບັນຊີຂອງກຸ່ມອື່ນ ບໍ່ເຫັນລາຄາ ແລະສິນຄ້າຂອງກຸ່ມອື່ນໃນອໍເດີປະສົມ ແລະບໍ່ເຫັນອີເມວແຈ້ງເຕືອນ.</p>
+  </section>
+
+  <section id="cust">
+    <h2><span class="role cust">ລູກຄ້າ</span> ສັ່ງຊື້ໃນມືຖື</h2>
+    <p class="sub">ບໍ່ຕ້ອງສະໝັກ ບໍ່ຕ້ອງລົງແອັບ. ເປີດລິ້ງ ແລ້ວສັ່ງໄດ້ເລີຍ.</p>
+    <div class="phones">
+      <figure class="phonebox" style="margin:0"><div class="phone"><div class="top">vari</div><div class="body">
+        <div class="tile"><div class="imgbox"></div><div class="bar m"></div><div class="bar s"></div><div class="pbtn">+ ເພີ່ມໃສ່ກະຕ່າ</div></div>
+        <div class="tile"><div class="imgbox"></div><div class="bar m"></div><div class="pbtn">+ ເພີ່ມໃສ່ກະຕ່າ</div></div>
+        <div class="cart"><span>2 ລາຍການ</span><span>ເບິ່ງກະຕ່າ →</span></div>
+        <div class="nav"><span>ສິນຄ້າ</span><span>ກະຕ່າ</span><span>ບິນ</span><span>ບັນຊີ</span></div></div></div>
+        <figcaption><b>1. ເລືອກສິນຄ້າ</b><br>ກົດ "ເພີ່ມໃສ່ກະຕ່າ" ແລ້ວກົດແຖບ "ເບິ່ງກະຕ່າ"</figcaption></figure>
+      <figure class="phonebox" style="margin:0"><div class="phone"><div class="top">ກະຕ່າສິນຄ້າ</div><div class="body">
+        <div class="tile"><div class="bar m"></div><div class="row" style="display:flex;justify-content:space-between"><span>− 2 +</span><span>80,000</span></div></div>
+        <div class="tile"><div class="bar m"></div><div class="row" style="display:flex;justify-content:space-between"><span>− 1 +</span><span>35,000</span></div></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700"><span>ລວມ</span><span>115,000 ₭</span></div>
+        <div class="pbtn" style="margin-top:auto">ດຳເນີນການຈ່າຍເງິນ →</div></div></div>
+        <figcaption><b>2. ກວດກະຕ່າ</b><br>ປັບຈຳນວນ ແລ້ວກົດ "ດຳເນີນການຈ່າຍເງິນ"</figcaption></figure>
+      <figure class="phonebox" style="margin:0"><div class="phone"><div class="top">ຂໍ້ມູນຈັດສົ່ງ</div><div class="body">
+        <div class="field">ຊື່ *</div><div class="field">ເບີໂທ *</div>
+        <div class="pbtn o">📍 ຕຳແໜ່ງປັດຈຸບັນ</div><div class="field">ວັນ-ເວລາຈັດສົ່ງ *</div>
+        <div class="field">ຮູບໜ້າບ້ານ (ບໍ່ບັງຄັບ)</div><div class="field">ເກັບເງິນປາຍທາງ</div>
+        <div class="pbtn" style="margin-top:auto">ຢືນຢັນສັ່ງຊື້</div></div></div>
+        <figcaption><b>3. ຂໍ້ມູນຈັດສົ່ງ</b><br>ຊື່ ເບີ ຕຳແໜ່ງ (GPS / ປັກໝຸດ / ວາງລິ້ງ) ວັນ-ເວລາ</figcaption></figure>
+      <figure class="phonebox" style="margin:0"><div class="phone"><div class="top">ສັ່ງຊື້ສຳເລັດ</div><div class="body" style="text-align:center">
+        <div style="font-size:26px;color:var(--ok)">✓</div><div style="font-weight:700">ເລກອໍເດີ OD...</div>
+        <div class="pbtn">ບັນທຶກບິນເປັນຮູບ</div><div class="pbtn o">ເບິ່ງໃບບິນ</div>
+        <div class="bar m" style="align-self:center"></div><div class="bar s" style="align-self:center"></div></div></div>
+        <figcaption><b>4. ໄດ້ບິນ</b><br>ບັນທຶກເປັນຮູບໄວ້ໃນມືຖື ແລະເບິ່ງໃນເມນູ "ບິນ"</figcaption></figure>
+    </div>
+    <ol class="steps cust">
+      <li><b>ຕິດຕາມບິນ:</b> ເມນູ "ບິນ & ອໍເດີຂອງຂ້ອຍ" ສະແດງສະຖານະ ສົ່ງແລ້ວ → ຮ້ານຮັບແລ້ວ → ກຳລັງຈັດສົ່ງ → ສຳເລັດ.<small>ບິນເກັບໃນມືຖືເຄື່ອງນັ້ນ. ເຄື່ອງອື່ນຄົ້ນຫາດ້ວຍເລກອໍເດີ + ເບີໂທ.</small></li>
+      <li><b>ມັດຈຳກະຕຸກ:</b> ສິນຄ້າທີ່ມີມັດຈຳ (ເຊັ່ນ ນ້ຳ 18,9 ລິດ) ຈະຄິດມັດຈຳລວມໃນຍອດ. ມີກະຕຸກເກົ່າມາແລກ ເລືອກ "ມີກະຕຸກເກົ່າ" ຈະບໍ່ເສຍມັດຈຳ.</li>
+      <li><b>ຈ່າຍເງິນ:</b> ເກັບເງິນປາຍທາງ. ຖ້າຢາກໂອນ ຝ່າຍຮ້ານຈະທັກ WhatsApp ສົ່ງເລກບັນຊີໃຫ້ຫຼັງຮັບອໍເດີ.</li>
+      <li><b>ພາສາ:</b> ເມນູ ☰ ເລືອກ ລາວ / ไทย / EN. ຕິດຕັ້ງເປັນແອັບ: ເມນູ ☰ ກົດ "ຕິດຕັ້ງແອັບ".</li>
+    </ol>
+  </section>
+
+  <section id="grp">
+    <h2><span class="role grp">ຜູ້ຮັບຜິດຊອບກຸ່ມ</span> ຕົວແທນນ້ຳແພັກ / ສຳນັກງານນ້ຳຕຸກໃຫຍ່</h2>
+    <p class="sub">ເປີດລິ້ງແອດມິນ ໃສ່ລະຫັດຂອງກຸ່ມຕົນ. ຫົວຂໍ້ຈະຂຶ້ນຊື່ກຸ່ມ ເຊັ່ນ "👷 ນ້ຳແພັກ" ແລະເມນູມີ 4 ແຖບ: <b>ອໍເດີ</b>, <b>ຈັດສົ່ງ</b>, <b>ສະຫຼຸບ</b>, <b>ສະຕັອກ</b>.</p>
+    <div class="split">
+      <div class="mock" aria-label="ຕົວຢ່າງບັດອໍເດີ" style="--sc:var(--c-grp)">
+        <div class="row" style="justify-content:space-between"><span class="mid">OD261111-09072596</span><span class="lbl" style="margin:0">11-11 02:07</span></div>
+        <div class="row" style="margin:4px 0"><span class="tag">ນ້ຳແພັກ</span></div>
+        <div class="row" style="margin:6px 0"><span class="big">✔ ຢືນຢັນຮັບອໍເດີ</span><span class="ghost">💰 ຮັບເງິນແລ້ວ</span></div>
+        <div class="row" style="margin-bottom:6px"><span class="btn wa">💬 ແຈ້ງລູກຄ້າ</span></div>
+        <div class="row"><span class="in ro">ຊື່ (ອ່ານຢ່າງດຽວ)</span><span class="in ro">ເບີໂທ</span></div>
+        <div class="lbl">ນ້ຳດື່ມ 250 ມລ ×3, ນ້ຳດື່ມ 2000 ມລ ×2</div>
+        <div class="tot"><span>ລວມ 80,000 ₭</span><span>ເກັບເງິນປາຍທາງ</span></div>
+        <div class="row"><span class="in">ຈ່າຍແລ້ວ 0</span><span class="in">ສະຖານະ: ໃໝ່ ▾</span></div>
+        <div class="row" style="margin-top:8px"><span class="btn line">📍 ແຜນທີ່</span><span class="save">💾 ບັນທຶກ</span></div>
+      </div>
+      <ul class="legend" style="--sc:var(--c-grp)">
+        <li><span class="num">1</span><p><b>ຢືນຢັນຮັບອໍເດີ</b> ກົດຮັບສ່ວນຂອງກຸ່ມ ປຸ່ມຈະປ່ຽນເປັນ "ເລີ່ມຈັດສົ່ງ" ແລ້ວ "ສົ່ງແລ້ວ" ຕາມລຳດັບ.<small>ເຫັນສະເພາະລາຍການ ແລະຍອດຂອງກຸ່ມຕົນ.</small></p></li>
+        <li><span class="num">2</span><p><b>💬 ແຈ້ງລູກຄ້າ</b> ເປີດ WhatsApp ພ້ອມຂໍ້ຄວາມສຳເລັດຮູບ ມີຍອດຄ້າງ ແລະບັນຊີຂອງກຸ່ມຕົນ. ກົດສົ່ງເອງ.</p></li>
+        <li><span class="num">3</span><p><b>💰 ຮັບເງິນແລ້ວ</b> ກົດເມື່ອໄດ້ຮັບເງິນສ່ວນຂອງກຸ່ມ (ເກັບປາຍທາງ ຫຼືລູກຄ້າໂອນ). ຄ້າງຈ່າຍຈະເປັນ 0.<small>ຮັບເງິນບາງສ່ວນ: ພິມຈຳນວນໃນຊ່ອງ "ຈ່າຍແລ້ວ" ແລ້ວກົດ ບັນທຶກ.</small></p></li>
+        <li><span class="num">4</span><p><b>ຊື່ / ເບີ / ທີ່ຢູ່ ແກ້ບໍ່ໄດ້</b> (ຊ່ອງຈາງ) ແຕ່ເບິ່ງ ແລະກົດໂທ/ແຜນທີ່ໄດ້. ໃສ່ໝາຍເຫດ ແລະບັນທຶກໄດ້.</p></li>
+        <li><span class="num">5</span><p><b>ແຖບ "ຈັດສົ່ງ"</b> ໃບຈັດສົ່ງປະຈຳວັນ ແຍກຕາມເວລາ ມີຍອດທີ່ຕ້ອງເກັບ, ແຜນທີ່, ປຸ່ມ "ສົ່ງແລ້ວ" ແລະ "ຮັບກະຕຸກຄືນ" (ສຳນັກງານ).</p></li>
+        <li><span class="num">6</span><p><b>ແຖບ "ສະຕັອກ"</b> ເຫັນສະເພາະສິນຄ້າຂອງກຸ່ມຕົນ. ໃສ່ຈຳນວນຄົງເຫຼືອຈິງ ຫຼືກົດ +10 / +50 / +100 ເມື່ອເຄື່ອງເຂົ້າ ແລ້ວກົດ 💾 ບັນທຶກ.<small>ແກ້ສະເພາະຈຳນວນ ບໍ່ເຫັນ/ແກ້ລາຄາໄດ້. ລະບົບຕັດສະຕັອກເອງເມື່ອມີອໍເດີ ແລະຄືນເມື່ອຍົກເລີກ.</small></p></li>
+        <li><span class="num">7</span><p><b>ແຖບ "ສະຫຼຸບ"</b> ຍອດຂາຍ 7/30/90 ວັນ, ຈຳນວນອໍເດີ, ຍອດຄ້າງຮັບ, ຍອດລາຍວັນ/ລາຍເດືອນ, ສິນຄ້າຂາຍດີ ສະເພາະກຸ່ມຕົນ ແລະສົ່ງອອກ Excel ໄດ້.</p></li>
+      </ul>
+    </div>
+    <div class="callout"><b>ອໍເດີປະສົມ (ມີທັງສອງກຸ່ມ)</b>ແຕ່ລະຝ່າຍມີສະຖານະ ແລະຍອດຂອງຕົນ. ຝ່າຍໜຶ່ງຮັບແລ້ວ ອີກຝ່າຍຍັງບໍ່ຮັບ ກໍບໍ່ກະທົບກັນ. ເບິ່ງຫົວຂໍ້ "ສະຖານະ" ຂ້າງລຸ່ມ.</div>
+  </section>
+
+  <section id="own">
+    <h2><span class="role own">ເຈົ້າຂອງຮ້ານ</span> ຄຸມທຸກຢ່າງ</h2>
+    <p class="sub">ເຂົ້າດ້ວຍລະຫັດເຈົ້າຂອງ ເຫັນ 7 ເມນູ. ຕາຕະລາງລຸ່ມບອກວ່າແຕ່ລະເມນູໃຊ້ເຮັດຫຍັງ.</p>
+    <div class="cards">
+      <div class="card"><h3>ອໍເດີ</h3><ul><li>ເຫັນທຸກອໍເດີ ແລະປ້າຍສະຖານະແຍກກຸ່ມ</li><li>ກອງຕາມກຸ່ມ / ສະຖານະ / ຊື່ / ເບີ</li><li>ຍົກເລີກ ແລະ <b>ລົບ</b> ອໍເດີທົດສອບ</li></ul></div>
+      <div class="card"><h3>ຈັດສົ່ງ</h3><ul><li>ໃບຈັດສົ່ງຕາມວັນ ແຍກຕາມກຸ່ມ ແລະເວລາ</li><li>ຍອດທີ່ຕ້ອງເກັບ, ສິນຄ້າທີ່ຕ້ອງໂຫຼດ</li><li>ພິມໄດ້</li></ul></div>
+      <div class="card"><h3>ລູກຄ້າ & ກະຕຸກ / ປະຈຳ</h3><ul><li>ຍອດຊື້, ກະຕຸກທີ່ລູກຄ້າຖືຢູ່</li><li>ຄືນກະຕຸກບາງສ່ວນ ແລະຍອດມັດຈຳທີ່ຕ້ອງຄືນ</li></ul></div>
+      <div class="card"><h3>ລາຍງານ</h3><ul><li>ຍອດຂາຍລາຍວັນ / ເດືອນ, ສິນຄ້າຂາຍດີ</li><li>ຍອດຄ້າງຮັບ, ສົ່ງອອກ Excel/CSV</li></ul></div>
+      <div class="card"><h3>ສິນຄ້າ</h3><ul><li>ເພີ່ມ / ແກ້ ຊື່ ລາຄາ ຮູບ ສະຕັອກ ມັດຈຳ</li><li><b>ກຸ່ມຈັດສົ່ງ</b>: ໃສ່ <code>ນ້ຳແພັກ</code> ຫຼື <code>ນ້ຳຕຸກໃຫຍ່</code> ໃຫ້ທຸກສິນຄ້າ</li><li>ສິນຄ້າໃໝ່ເລີ່ມເປັນ "ບໍ່ສະແດງ" ຕິກ ☑ ເມື່ອພ້ອມຂາຍ ແລ້ວ ບັນທຶກ</li></ul></div>
+      <div class="card"><h3>ຕັ້ງຄ່າ</h3><ul><li>ຊື່ຮ້ານ, ໂລໂກ້, ສີ, ເບີໂທ</li><li>ໂອນ QR ສະແດງ/ບໍ່ສະແດງ, ບັນຊີຕໍ່ກຸ່ມ</li><li>ອີເມວແຈ້ງເຕືອນ + ອີເມວ / Telegram ຕໍ່ກຸ່ມ</li><li>ຊ່ວງເວລາຈັດສົ່ງ, ຍອດຂັ້ນຕ່ຳ</li></ul></div>
+    </div>
+    <div class="callout ok"><b>ລະຫັດ ແລະຂໍ້ມູນລັບ (ຕັ້ງໃນ Apps Script → Project Settings → Script properties)</b>
+      <span><code>ADMIN_PASSWORD</code> ລະຫັດເຈົ້າຂອງ · <code>STAFF_PASSWORDS</code> ລະຫັດພະນັກງານ · <code>GROUP_PASSWORDS</code> ລະຫັດກຸ່ມ ຮູບແບບ <code>ນ້ຳແພັກ=ລະຫັດ,ນ້ຳຕຸກໃຫຍ່=ລະຫັດ</code> · <code>TELEGRAM_TOKEN</code> ບອດ Telegram. ຢ່າສົ່ງຄ່າເຫຼົ່ານີ້ໃຫ້ໃຜ ຫຼືຖ່າຍຮູບໃຫ້ເຫັນ.</span></div>
+    <h3 style="margin-top:22px">ລົບອໍເດີທົດສອບ ໃຫ້ຖືກວິທີ</h3>
+    <ol class="steps own">
+      <li>ໃນແຖບ <b>ອໍເດີ</b> ຫາບັດອໍເດີທົດສອບ ປ່ຽນ <b>ສະຖານະ</b> ເປັນ <b>ຍົກເລີກ</b> ແລ້ວ <b>ບັນທຶກ</b> (ສະຕັອກຄືນອັດຕະໂນມັດ)</li>
+      <li>ກອງສະຖານະ "ຍົກເລີກ" ແລ້ວກົດ <b>🗑 ລົບອໍເດີ</b> ໃນບັດນັ້ນ ຢືນຢັນ ແຖວຈະຫາຍຈາກ Google Sheet<small>ລົບຜິດ ກູ້ໄດ້ຈາກ Sheet → ໄຟລ໌ → ປະຫວັດເວີຊັນ. ອໍເດີທີ່ຍັງບໍ່ຍົກເລີກ ລົບບໍ່ໄດ້.</small></li>
+    </ol>
+  </section>
+
+  <section id="status">
+    <h2>ສະຖານະອໍເດີ</h2>
+    <div class="stat" role="list"><span class="pill w">ລໍຖ້າຊຳລະ</span><span class="arrow">→</span><span class="pill i">ໃໝ່</span><span class="arrow">→</span><span class="pill i">ຢືນຢັນແລ້ວ</span><span class="arrow">→</span><span class="pill s">ກຳລັງຈັດສົ່ງ</span><span class="arrow">→</span><span class="pill d">ສຳເລັດ</span><span class="arrow">|</span><span class="pill x">ຍົກເລີກ</span></div>
+    <p class="sub">ລູກຄ້າເຫັນເປັນ: ສົ່ງແລ້ວ → ຮ້ານຮັບແລ້ວ → ກຳລັງຈັດສົ່ງ → ສຳເລັດ. "ລໍຖ້າຊຳລະ" ໃຊ້ເມື່ອເປີດໃຫ້ໂອນແລ້ວຍັງບໍ່ແນບສະລິບ.</p>
+    <h3 style="margin-top:20px">ອໍເດີທີ່ມີ 2 ກຸ່ມ: ສະຖານະລວມຕາມຝ່າຍທີ່ຊ້າສຸດ</h3>
+    <div class="lanes">
+      <div class="lane"><span class="who"><span class="role grp">ນ້ຳແພັກ</span></span><div class="stat" style="margin:0"><span class="pill i">ໃໝ່</span><span class="arrow">→</span><span class="pill i">ຢືນຢັນແລ້ວ ✓</span></div></div>
+      <div class="lane"><span class="who"><span class="role grp">ນ້ຳຕຸກໃຫຍ່</span></span><div class="stat" style="margin:0"><span class="pill i">ໃໝ່</span><span class="arrow">… ຍັງບໍ່ຮັບ</span></div></div>
+      <div class="lane total"><span class="who">ສະຖານະລວມ (ເຈົ້າຂອງ / ລູກຄ້າເຫັນ)</span><div class="stat" style="margin:0"><span class="pill i">ໃໝ່</span><span class="arrow">ຈົນກວ່າທັງສອງຝ່າຍຮັບ ຈຶ່ງເປັນ "ຢືນຢັນແລ້ວ"</span></div></div>
+    </div>
+    <p class="note" style="margin-top:8px">ເຈົ້າຂອງປ່ຽນສະຖານະລວມເອງໄດ້ ຈະທັບສະຖານະຕໍ່ກຸ່ມ. ຖ້າຝ່າຍໜຶ່ງຍົກເລີກ ສະຕັອກຄືນສະເພາະສິນຄ້າຂອງຝ່າຍນັ້ນ.</p>
+  </section>
+
+  <section id="notify">
+    <h2>ໃຜໄດ້ຮັບແຈ້ງເຕືອນຫຍັງ</h2>
+    <div class="cards">
+      <div class="card"><span class="role own">ເຈົ້າຂອງ</span><h3 style="margin-top:8px">ອີເມວຫຼັກ</h3><ul><li>ອໍເດີໃໝ່ ທຸກລາຍການ</li><li>ສະຕັອກໃກ້ໝົດ</li><li>ສະຫຼຸບການສົ່ງທຸກເຊົ້າ (ຖ້າເປີດ)</li></ul></div>
+      <div class="card"><span class="role grp">ນ້ຳແພັກ</span><h3 style="margin-top:8px">Telegram ກຸ່ມນ້ຳແພັກ</h3><ul><li>ສະເພາະລາຍການນ້ຳແພັກ</li><li>ຊື່, ເບີ, ແຜນທີ່, ວັນ-ເວລາ, ວິທີຈ່າຍ</li></ul></div>
+      <div class="card"><span class="role grp">ນ້ຳຕຸກໃຫຍ່</span><h3 style="margin-top:8px">Telegram ກຸ່ມນ້ຳຕຸກໃຫຍ່</h3><ul><li>ສະເພາະລາຍການນ້ຳ 18,9 ລິດ</li><li>ຊື່, ເບີ, ແຜນທີ່, ວັນ-ເວລາ, ວິທີຈ່າຍ</li></ul></div>
+      <div class="card"><span class="role cust">ລູກຄ້າ</span><h3 style="margin-top:8px">ບິນ + WhatsApp</h3><ul><li>ບິນເປັນຮູບໃນມືຖື</li><li>WhatsApp ຈາກຝ່າຍຮັບ (ກົດ "ແຈ້ງລູກຄ້າ" ສົ່ງເອງ) ພ້ອມຍອດ ແລະບັນຊີ</li></ul></div>
+    </div>
+  </section>
+
+  <section id="faq" class="faq">
+    <h2>ຕິດບັນຫາ ແກ້ແນວໃດ</h2>
+    <details><summary>ໜ້າແອດມິນບໍ່ເຫັນຂອງໃໝ່ / ປຸ່ມບໍ່ຂຶ້ນ</summary>ກົດ <b>Ctrl+F5</b> (ມືຖື: ປິດແລ້ວເປີດໜ້າໃໝ່). ເບຣາເຊີອາດເກັບໜ້າເກົ່າໄວ້.</details>
+    <details><summary>ລືມລະຫັດ ຫຼືຢາກປ່ຽນລະຫັດ</summary>ເຈົ້າຂອງປ່ຽນໄດ້ທີ່ Apps Script → Project Settings → Script properties (ADMIN_PASSWORD / STAFF_PASSWORDS / GROUP_PASSWORDS). ບໍ່ຕ້ອງ deploy ໃໝ່.</details>
+    <details><summary>ເພີ່ມສິນຄ້າໃໝ່ ແລ້ວລູກຄ້າບໍ່ເຫັນ</summary>ກວດ 3 ຢ່າງ: ຕິກ ☑ "ສະແດງໃນຮ້ານ", ໃສ່ລາຄາ, ແລະກົດ <b>💾 ບັນທຶກສິນຄ້າທັງໝົດ</b>. ແລ້ວ Ctrl+F5 ໜ້າລູກຄ້າ.</details>
+    <details><summary>ອໍເດີບໍ່ຂຶ້ນໃຫ້ຜູ້ຮັບຜິດຊອບກຸ່ມ</summary>ກວດວ່າສິນຄ້າຖືກໃສ່ "ກຸ່ມຈັດສົ່ງ" ແລະຊື່ກຸ່ມຕົງກັບລະຫັດກຸ່ມ ເຊັ່ນ <code>ນ້ຳແພັກ</code>. ອໍເດີເກົ່າກ່ອນໃສ່ກຸ່ມ ຈະບໍ່ຂຶ້ນໃຫ້ກຸ່ມ (ເຈົ້າຂອງເຫັນຢູ່).</details>
+    <details><summary>Telegram ບໍ່ແຈ້ງເຕືອນ</summary>ໃຫ້ເຈົ້າຂອງຣັນຟັງຊັນ <code>testGroupNotify</code> ໃນ Apps Script ແລ້ວເບິ່ງ log. ກວດວ່າບອດຢູ່ໃນກຸ່ມ ແລະ <code>TELEGRAM_TOKEN</code> ຖືກຕ້ອງ.</details>
+    <details><summary>ລູກຄ້າຢາກໂອນເງິນ</summary>ຝ່າຍຮັບກົດ "ຢືນຢັນຮັບ" ແລ້ວ "💬 ແຈ້ງລູກຄ້າ" ຂໍ້ຄວາມຈະມີບັນຊີຂອງຝ່າຍນັ້ນ. ລູກຄ້າໂອນ ແລະສົ່ງສະລິບທາງແຊັດ ຝ່າຍນັ້ນກວດ ແລ້ວກົດ "ຮັບເງິນແລ້ວ".</details>
+    <details><summary>ຕົວແທນຢາກເພີ່ມສະຕັອກ ຫຼືເບິ່ງຍອດຂາຍ</summary>ໃນແອດມິນຂອງຕົວແທນ ແຖບ <b>ສະຕັອກ</b> (ແກ້ຈຳນວນສິນຄ້າຂອງກຸ່ມຕົນ) ແລະແຖບ <b>ສະຫຼຸບ</b> (ຍອດຂາຍ ສະເພາະກຸ່ມຕົນ). ສິນຄ້າຕ້ອງຖືກໃສ່ "ກຸ່ມຈັດສົ່ງ" ໂດຍເຈົ້າຂອງ ຈຶ່ງຈະຂຶ້ນໃຫ້ກຸ່ມ.</details>
+    <details><summary>ຕົວແທນຢາກເພີ່ມຜະລິດຕະພັນໃໝ່ / ແກ້ລາຄາ</summary>ເຮັດເອງບໍ່ໄດ້ ຕ້ອງແຈ້ງເຈົ້າຂອງ. ເຈົ້າຂອງເພີ່ມໃນແຖບ ສິນຄ້າ ແລະໃສ່ກຸ່ມ ແລ້ວຕົວແທນຈະເຫັນໃນແຖບ ສະຕັອກ.</details>
+    <details><summary>ຢາກໃຫ້ຕົວແທນເຫັນ Google Sheet ບໍ?</summary>ບໍ່ຕ້ອງ. ຕົວແທນໃຊ້ແອດມິນດ້ວຍລະຫັດກຸ່ມທັງໝົດ. ການແຊຣ໌ Sheet ຈະເຮັດໃຫ້ເຫັນຂໍ້ມູນທຸກກຸ່ມ ແລະທຸກລູກຄ້າ.</details>
+  </section>
+
+  <p class="foot">ຄູ່ມືນີ້ສະແດງຕາມລະບົບທີ່ໃຊ້ງານຕອນນີ້ (ຂໍ້ມູນ: Google Sheet · ເວັບ: GitHub Pages · ຫຼັງບ້ານ: Google Apps Script). ຖ້າລະບົບປ່ຽນ ຄວນອັບເດດຄູ່ມື.</p>
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function(b){
+  b.addEventListener('click',function(){
+    var el=document.getElementById(b.dataset.t), txt=el.textContent.trim(), old=b.textContent;
+    function done(){b.textContent='ຄັດລອກແລ້ວ';setTimeout(function(){b.textContent=old},1600)}
+    function pick(){var r=document.createRange();r.selectNodeContents(el);var s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='ເລືອກແລ້ວ ກົດ Ctrl+C';setTimeout(function(){b.textContent=old},2200)}
+    try{ navigator.clipboard.writeText(txt).then(done,pick) }catch(e){ pick() }
+  });
+});
+</script>
+</html>
